@@ -1,0 +1,70 @@
+# Runs on every push to main and every pull request.
+# Catches crashes, stale builds and broken UI before a change is merged,
+# including changes written by AI agents.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-simulate:
+    name: Build + headless simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build index.html from src/ (Node)
+        run: node build.mjs
+
+      - name: index.html in the commit must match src/
+        run: |
+          if ! git diff --quiet -- index.html; then
+            echo "::error file=index.html::index.html is out of date. Run 'node build.mjs' (or 'python3 build.py') and commit the result."
+            exit 1
+          fi
+
+      - name: Python build gives the same file
+        run: python3 build.py && git diff --exit-code -- index.html
+
+      - name: Simulation — 2 players, continental, 30 min
+        run: node tools/sim-test.mjs 30 continental 80 1234 majapahit,britons hard,hard
+
+      - name: Simulation — 3 players, rivers, 30 min
+        run: node tools/sim-test.mjs 30 rivers 96 7 majapahit,japanese,ottomans hard,hardest,normal
+
+      - name: Simulation — 4 players, coastal, 20 min
+        run: node tools/sim-test.mjs 20 coastal 96 42 franks,mongols,byzantines,chinese normal,hard,easy,hardest
+
+  browser-smoke:
+    name: Browser smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install --with-deps chromium
+
+      - name: Play the game in headless Chromium
+        run: node tools/browser-smoke.mjs
+
+      - name: Keep screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: tools/screenshots/
+          if-no-files-found: ignore
