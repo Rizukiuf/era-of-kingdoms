@@ -71,7 +71,7 @@ compact functions.
 
 ## Definition of done for a pull request
 
-- One focused change per PR, on a branch named `feature/...` or `fix/...`.
+- One focused change per PR, on its own branch. Claude sessions push to `claude/...` branches (they cannot push to `main`); humans can use `feature/...` or `fix/...`. Changes reach `main` only through a reviewed pull request.
 - `node build.mjs` run and `index.html` committed.
 - Sim tests pass; for UI changes, the browser smoke test passes or you describe how you tested in a browser.
 - New text translated in all 7 languages (or flagged in the PR).

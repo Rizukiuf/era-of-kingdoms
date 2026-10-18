@@ -207,7 +207,8 @@ node build.mjs && node tools/browser-smoke.mjs
 Tangkapan layar tersimpan di `tools/screenshots/`.
 
 **Uji otomatis di GitHub (CI).** Setelah proyek ada di GitHub, `.github/workflows/ci.yml` menjalankan build,
-tiga uji simulasi, dan uji browser pada setiap push ke `main` dan setiap pull request. Hasilnya terlihat di tab
+tiga uji simulasi, dan uji browser pada setiap push ke `main` atau ke branch `claude/...`, setiap pull request,
+dan kapan saja lewat tombol **Run workflow** di tab Actions. Hasilnya terlihat di tab
 **Actions** dan sebagai tanda centang hijau/silang merah di pull request. Jangan menggabungkan pull request yang
 CI-nya merah.
 

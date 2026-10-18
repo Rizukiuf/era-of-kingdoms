@@ -1,12 +1,17 @@
-# Runs on every push to main and every pull request.
+# Runs on every push to main or a claude/* branch, on every pull request, and on demand.
 # Catches crashes, stale builds and broken UI before a change is merged,
 # including changes written by AI agents.
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-simulate:
