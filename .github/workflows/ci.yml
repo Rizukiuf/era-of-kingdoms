@@ -16,7 +16,7 @@ concurrency:
 jobs:
   build-and-simulate:
     name: Build + headless simulation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
 
   browser-smoke:
     name: Browser smoke test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
