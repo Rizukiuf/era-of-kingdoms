@@ -230,14 +230,16 @@ CI-nya merah.
 | Spasi | Lompat ke lokasi serangan terakhir |
 | Del | Hapus pilihan |
 | P / F3 | Jeda |
-| + / − | Kecepatan permainan |
+| + / − | Kecepatan permainan (tombol kecepatan di bilah atas: klik = naik, setelah 3× kembali ke 1×; klik kanan = turun) |
 | Panah / tepi layar / seret tombol tengah | Gulir peta |
 | Roda mouse | Zoom |
 | Alt + klik kanan | Masukkan unit ke dalam bangunan |
 | Esc / F10 | Batal / menu permainan |
 
 Layar sentuh: ketuk untuk memilih dan memberi perintah, geser satu jari untuk menggulir, cubit untuk zoom,
-tekan lama lalu geser untuk memilih area.
+tekan lama lalu geser untuk memilih area. Ketuk tombol perintah untuk melihat keterangannya (hilang sendiri
+setelah beberapa detik). Kotak tutorial bisa diciutkan lewat tombol **Sembunyikan** (di layar HP otomatis ciut,
+hanya menampilkan tujuan saat ini; ketuk untuk membuka).
 
 ---
 

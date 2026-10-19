@@ -138,6 +138,7 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .tbtn { appearance: none; border: 1px solid var(--line-soft); background: rgba(10, 14, 28, .6); color: var(--text); height: 30px; min-width: 30px; padding: 0 8px; border-radius: 3px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .tbtn:hover { border-color: var(--bronze); }
 .tbtn svg { width: 18px; height: 18px; }
+.tbtn > *, .resb > *, .cb > *, #selpanel button > * { pointer-events: none; }
 .tbtn .cnt { font-weight: 700; color: var(--warn); }
 #feed { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; max-width: min(520px, 70vw); pointer-events: none; }
 .msg { font-size: 14px; padding: 4px 10px; background: rgba(8, 11, 20, .72); border-left: 3px solid var(--bronze); border-radius: 2px; color: var(--text); text-shadow: 0 1px 2px #000; animation: msgIn .25s ease-out; }
@@ -151,6 +152,16 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 #objectives .obj { display: grid; grid-template-columns: 18px 1fr; gap: 6px; font-size: 14px; line-height: 1.35; }
 #objectives .obj.done { color: var(--muted); text-decoration: line-through; }
 #objectives .hint { font-size: 13px; color: var(--muted); line-height: 1.4; border-top: 1px solid var(--line-soft); padding-top: 8px; }
+#objectives .tut-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#objectives .tut-body { display: grid; gap: 8px; }
+.tut-tog { appearance: none; border: 1px solid var(--line); background: rgba(10, 14, 28, .6); color: var(--muted); font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 3px; cursor: pointer; white-space: nowrap; flex: none; }
+.tut-tog:hover { color: var(--text); border-color: var(--bronze); }
+#objectives .tut-cur { display: none; font-size: 14px; line-height: 1.35; color: var(--text); }
+#objectives.collapsed { width: auto; max-width: min(360px, 46vw); padding: 8px 12px; gap: 4px; cursor: pointer; }
+#objectives.collapsed .tut-body { display: none; }
+#objectives.collapsed .tut-cur { display: block; }
+#objectives.pulse { animation: tutPulse 1.4s ease-out 1; }
+@keyframes tutPulse { 0% { box-shadow: 0 0 0 0 rgba(234, 208, 154, .75), var(--shadow); } 100% { box-shadow: 0 0 0 14px rgba(234, 208, 154, 0), var(--shadow); } }
 #banner { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; pointer-events: none; font-family: var(--f-display); color: var(--bronze-hi); text-shadow: 0 2px 10px #000, 0 0 2px #000; font-size: clamp(22px, 3.4vw, 38px); letter-spacing: .06em; white-space: nowrap; }
 #banner small { display: block; font-family: var(--f-body); font-size: 15px; color: var(--text); letter-spacing: 0; margin-top: 6px; }
 #wonderbar { position: absolute; left: 50%; top: calc(48px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); font-size: 13px; display: flex; gap: 10px; pointer-events: none; }
@@ -278,7 +289,10 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
   .set-row { grid-template-columns: minmax(0, 1fr); }
   .menu-col { padding-left: max(20px, env(safe-area-inset-left, 0px)); }
   .menu-item { font-size: 19px; }
-  #objectives { width: min(260px, 60vw); font-size: 13px; }
+  #objectives { width: min(300px, calc(100vw - 24px)); font-size: 13px; max-height: calc(100vh - 360px); overflow-y: auto; }
+  #objectives.collapsed { max-width: calc(100vw - 24px); }
+  #objectives .tut-cur { font-size: 13px; }
+  body.has-tut #feed { top: calc(140px + env(safe-area-inset-top, 0px)); }
   .touchbar { bottom: calc(250px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) {

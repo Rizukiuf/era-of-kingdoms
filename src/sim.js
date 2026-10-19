@@ -1521,7 +1521,7 @@ function checkVictory() {
     for (const k in ts) if (ts[k] > bs) { bs = ts[k]; best = k; }
     winner = best;
   }
-  if (G.cfg.tutorial && winner && winner === teamKey(G.human) && !G.tutDone) winner = null;
+  if (G.cfg.tutorial && winner && winner === teamKey(G.human)) G.tutDone = true;
   if (winner && !G.cfg.attract) {
     G.over = true; G.winner = winner;
     for (const p of G.players) p.score = calcScore(p);

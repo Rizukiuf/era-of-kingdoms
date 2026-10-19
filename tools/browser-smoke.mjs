@@ -126,6 +126,53 @@ try {
   await page.waitForFunction(() => UI.screen === 'game', null, { timeout: 30000 });
   const loaded = await page.evaluate(() => ({ u: G.units.length, b: G.blds.length }));
   check('save and load round trip', saved && Math.abs(loaded.u - before.u) <= 3 && Math.abs(loaded.b - before.b) <= 2, `before ${JSON.stringify(before)}, after ${JSON.stringify(loaded)}`);
+
+  // 7) the speed button cycles 1× → 1.5× → 2× → 3× and wraps back to 1×
+  const speeds = [];
+  for (let i = 0; i < 5; i++) { await page.click('#btnSpeed'); speeds.push(await page.evaluate(() => UI.speed)); }
+  check('speed button wraps from 3× back to 1×', speeds.includes(3) && speeds[speeds.indexOf(3) + 1] === 1, speeds.join(' → '));
+
+  // 8) pause, quit to the main menu, Continue: the game runs and no PAUSE badge is left over
+  await page.evaluate(() => { UI.speed = 1; saveGame('auto'); });
+  await page.keyboard.press('p');
+  const pausedBadge = await page.evaluate(() => UI.paused && !!document.getElementById('pausebadge'));
+  await page.click('#btnMenu');
+  await page.click('#modal [data-a="quit"]');
+  await page.click('#modal [data-a="quit"]');
+  await page.waitForFunction(() => UI.screen === 'menu', null, { timeout: 30000 });
+  await page.click('[data-a="continue"]');
+  await page.waitForFunction(() => UI.screen === 'game' && !G.cfg.attract, null, { timeout: 30000 });
+  const t0 = await page.evaluate(() => G.time);
+  await page.waitForTimeout(1000);
+  const resumed = await page.evaluate(t0 => ({ paused: UI.paused, badge: !!document.getElementById('pausebadge'), ran: G.time > t0 }), t0);
+  await page.click('#btnPause');
+  const repaused = await page.evaluate(() => UI.paused && !!document.getElementById('pausebadge'));
+  await page.click('#btnPause');
+  check('no stale PAUSE after quit → Continue, pause button still works',
+    pausedBadge && !resumed.paused && !resumed.badge && resumed.ran && repaused,
+    `paused before quit: ${pausedBadge}, after continue: ${JSON.stringify(resumed)}, pause button: ${repaused}`);
+
+  // 9) every click on the pause button registers while the game runs (the HUD refreshes many times a second)
+  const pb = await page.locator('#btnPause').boundingBox();
+  let toggled = 0;
+  for (let i = 0; i < 20; i++) {
+    const was = await page.evaluate(() => UI.paused);
+    await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2);
+    await page.mouse.down(); await page.waitForTimeout(60 + (i * 37) % 180); await page.mouse.up();
+    if ((await page.evaluate(() => UI.paused)) !== was) toggled++;
+  }
+  check('pause button registers every click', toggled === 20, `${toggled}/20 clicks`);
+
+  // 10) the tutorial panel can be hidden and shown again
+  await page.evaluate(() => { try { localStorage.removeItem('eok.tutCollapsed'); } catch (e) { } startTutorial(); });
+  await page.waitForFunction(() => UI.screen === 'game' && G.cfg.tutorial && !document.getElementById('objectives').hidden, null, { timeout: 30000 });
+  const tutH = () => page.evaluate(() => Math.round(document.getElementById('objectives').getBoundingClientRect().height));
+  const hOpen = await tutH();
+  await page.click('#objectives [data-a="tut-toggle"]');
+  const hHidden = await tutH();
+  await page.click('#objectives [data-a="tut-toggle"]');
+  const hBack = await tutH();
+  check('tutorial panel can be hidden and shown', hHidden < hOpen / 2 && hBack === hOpen, `height ${hOpen} → ${hHidden} → ${hBack}px`);
 } catch (e) {
   check('test ran to the end', false, (e && e.message || String(e)).split('\n')[0]);
 }
