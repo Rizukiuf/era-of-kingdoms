@@ -152,7 +152,18 @@ try {
     pausedBadge && !resumed.paused && !resumed.badge && resumed.ran && repaused,
     `paused before quit: ${pausedBadge}, after continue: ${JSON.stringify(resumed)}, pause button: ${repaused}`);
 
-  // 9) the tutorial panel can be hidden and shown again
+  // 9) every click on the pause button registers while the game runs (the HUD refreshes many times a second)
+  const pb = await page.locator('#btnPause').boundingBox();
+  let toggled = 0;
+  for (let i = 0; i < 20; i++) {
+    const was = await page.evaluate(() => UI.paused);
+    await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2);
+    await page.mouse.down(); await page.waitForTimeout(60 + (i * 37) % 180); await page.mouse.up();
+    if ((await page.evaluate(() => UI.paused)) !== was) toggled++;
+  }
+  check('pause button registers every click', toggled === 20, `${toggled}/20 clicks`);
+
+  // 10) the tutorial panel can be hidden and shown again
   await page.evaluate(() => { try { localStorage.removeItem('eok.tutCollapsed'); } catch (e) { } startTutorial(); });
   await page.waitForFunction(() => UI.screen === 'game' && G.cfg.tutorial && !document.getElementById('objectives').hidden, null, { timeout: 30000 });
   const tutH = () => page.evaluate(() => Math.round(document.getElementById('objectives').getBoundingClientRect().height));

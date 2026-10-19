@@ -146,6 +146,7 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .tbtn { appearance: none; border: 1px solid var(--line-soft); background: rgba(10, 14, 28, .6); color: var(--text); height: 30px; min-width: 30px; padding: 0 8px; border-radius: 3px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .tbtn:hover { border-color: var(--bronze); }
 .tbtn svg { width: 18px; height: 18px; }
+.tbtn > *, .resb > *, .cb > *, #selpanel button > * { pointer-events: none; }
 .tbtn .cnt { font-weight: 700; color: var(--warn); }
 #feed { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; max-width: min(520px, 70vw); pointer-events: none; }
 .msg { font-size: 14px; padding: 4px 10px; background: rgba(8, 11, 20, .72); border-left: 3px solid var(--bronze); border-radius: 2px; color: var(--text); text-shadow: 0 1px 2px #000; animation: msgIn .25s ease-out; }
@@ -5907,6 +5908,11 @@ const UI = {
     this.bindMinimap($('minimap'));
     window.addEventListener('resize', () => R.resize());
     $('tooltip').style.display = 'none';
+    const sp = $('selpanel'), release = () => setTimeout(() => { this.panelHold = false; }, 0);
+    sp.addEventListener('pointerdown', () => { this.panelHold = true; });
+    window.addEventListener('pointerup', release, true);
+    window.addEventListener('pointercancel', release, true);
+    sp.addEventListener('click', e => this.selPanelClick(e));
     $('objectives').addEventListener('click', e => {
       if (this.tutCollapsed || e.target.closest('[data-a="tut-toggle"]')) this.toggleTutorial();
     });
@@ -6198,8 +6204,10 @@ const UI = {
     $('ageBar').hidden = !aging;
     if (aging) { const it = aging.q[0]; $('ageFill').style.width = (it.t / T[it.id].time * 100).toFixed(1) + '%'; }
     $('clock').textContent = fmtTime(G.time);
-    $('speedV').textContent = this.speed + '×';
-    $('btnPause').innerHTML = this.paused ? SVG.play : SVG.pause;
+    const sv = this.speed + '×'; if ($('speedV').textContent !== sv) $('speedV').textContent = sv;
+    // only touch the pause icon when it changes: replacing it under the pointer swallows the click
+    const pz = this.paused ? 'play' : 'pause', bp = $('btnPause');
+    if (bp.dataset.ic !== pz) { bp.dataset.ic = pz; bp.innerHTML = SVG[pz]; }
     $('idleN').textContent = p.idle.length;
     // wonders / relics countdowns
     const wb = [];
@@ -6215,12 +6223,31 @@ const UI = {
   // ---------------- selection panel ----------------
   updateSelPanel() {
     this.sel = this.sel.filter(id => { const e = byId(id); return e && !e.dead && !(e.k === 'u' && e.gIn) && !(e.k === 'r' && (e.carrier || e.inB)); });
+    // while a button in the panel is pressed, keep it in place so the click lands
+    if (this.panelHold) return;
     const sp = $('selpanel');
-    if (!this.sel.length) { if (sp.dataset.s !== 'none') { sp.innerHTML = `<div class="sinfo"><div class="sub">${t('hud.nothing')}</div></div>`; sp.dataset.s = 'none'; } return; }
-    sp.dataset.s = 'x';
+    const set = h => { if (sp._h !== h) { sp._h = h; sp.innerHTML = h; } };
+    if (!this.sel.length) { set(`<div class="sinfo"><div class="sub">${t('hud.nothing')}</div></div>`); return; }
     const ents = this.sel.map(byId);
-    if (ents.length === 1) { sp.innerHTML = this.infoHTML(ents[0]); return; }
-    sp.innerHTML = `<div class="multi">${ents.slice(0, 60).map(e => { const f = e.hp / e.mhp; return `<button class="mu" data-id="${e.id}" aria-label="${esc(nameOf(e.type))}"><img src="${this.iconFor(e)}" alt=""><i style="width:${(f * 100).toFixed(0)}%;background:${f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'}"></i></button>`; }).join('')}</div>`;
+    if (ents.length === 1) { set(this.infoHTML(ents[0])); return; }
+    set(`<div class="multi">${ents.slice(0, 60).map(e => { const f = e.hp / e.mhp; return `<button class="mu" data-id="${e.id}" title="${esc(nameOf(e.type))}" aria-label="${esc(nameOf(e.type))}"><img src="${this.iconFor(e)}" alt=""><i style="width:${(f * 100).toFixed(0)}%;background:${f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'}"></i></button>`; }).join('')}</div>`);
+  },
+  // clicks in the selection panel: queue icons cancel, unit icons narrow the selection
+  selPanelClick(e) {
+    const q = e.target.closest('.qi');
+    if (q) {
+      const b = byId(this.sel[0]);
+      if (b && b.k === 'b' && b.owner === G.human) { Cmd.cancel(b, +q.dataset.q + (+q.dataset.n || 1) - 1); Audio2.sfx('click'); this.panelHold = false; this.updateHUD(); }
+      return;
+    }
+    const m = e.target.closest('.mu');
+    if (!m) return;
+    const id = this.sel.find(x => String(x) === m.dataset.id), u = byId(id);
+    if (!u) return;
+    if (e.shiftKey) this.select([id], true);
+    else if (e.ctrlKey || e.metaKey) this.select(this.sel.filter(x => { const o = byId(x); return o && o.type === u.type; }), false);
+    else this.select([id], false);
+    this.panelHold = false; this.updateSelPanel();
   },
   iconFor(e) {
     if (e.k === 'u') return iconURL('unit', e.type, e.owner >= 0 ? G.players[e.owner].color : 6);
@@ -6262,7 +6289,7 @@ const UI = {
     if (e.k === 'b' && own && e.q.length) {
       const groups = [];
       for (let i = 0; i < e.q.length; i++) { const it = e.q[i]; const key = it.k + (it.type || it.id); if (i > 0 && groups.length && groups[groups.length - 1].key === key) groups[groups.length - 1].n++; else groups.push({ key, it, i, n: 1 }); }
-      h += `<div class="queue">${groups.map((g, gi) => { const it = g.it; const icon = it.k === 'u' ? iconURL('unit', resolveTrain(p, it.key), p.color) : iconURL('tech', T[it.id].ageUp ? 'age' + T[it.id].ageUp : T[it.id].icon, 0); const tot = it.k === 'u' ? ST(p.id, resolveTrain(p, it.key)).time : T[it.id].time; return `<button class="qi ${gi === 0 && it.wait ? 'wait' : ''}" data-q="${g.i}" title="${t('tt.cancel')}"><img src="${icon}" alt="">${gi === 0 ? `<span class="p" style="width:${(it.t / tot * 100).toFixed(0)}%"></span>` : ''}${g.n > 1 ? `<span class="n">${g.n}</span>` : ''}</button>`; }).join('')}</div>`;
+      h += `<div class="queue">${groups.map((g, gi) => { const it = g.it; const icon = it.k === 'u' ? iconURL('unit', resolveTrain(p, it.key), p.color) : iconURL('tech', T[it.id].ageUp ? 'age' + T[it.id].ageUp : T[it.id].icon, 0); const tot = it.k === 'u' ? ST(p.id, resolveTrain(p, it.key)).time : T[it.id].time; return `<button class="qi ${gi === 0 && it.wait ? 'wait' : ''}" data-q="${g.i}" data-n="${g.n}" title="${t('tt.cancel')}"><img src="${icon}" alt="">${gi === 0 ? `<span class="p" style="width:${(it.t / tot * 100).toFixed(0)}%"></span>` : ''}${g.n > 1 ? `<span class="n">${g.n}</span>` : ''}</button>`; }).join('')}</div>`;
     }
     return h + '</div>';
   },
