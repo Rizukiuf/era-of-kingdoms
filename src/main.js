@@ -62,19 +62,22 @@ function enterLoadedGame(fresh) {
     R.cam.z = 1;
   }
   hideLoading();
-  UI.enterGame();
   UI.paused = false;
   UI.speed = Settings.speed;
+  UI.enterGame();
+  UI.renderPause();
   autosaveT = G.time + 300;
   Audio2.startMusic(G.players[G.human].civ);
   if (fresh && !G.cfg.tutorial) UI.showBanner(civName(G.players[G.human].civ), t('map.' + G.mapType) + ' · ' + ageName(G.players[G.human].age), 4);
 }
 function restartGame() { if (lastCfg) { const c = Object.assign({}, lastCfg); if (c.tutorial) startTutorial(); else launch(c); } }
 function quitToMenu() {
-  UI.cancelMode(); UI.sel = []; UI.paused = false;
-  $('banner').hidden = true; $('objectives').hidden = true;
+  UI.cancelMode(); UI.sel = []; UI.paused = false; UI.hideTip();
+  $('banner').hidden = true; $('objectives').hidden = true; $('feed').innerHTML = '';
+  document.body.classList.remove('has-tut');
   startAttract();
   UI.showMenu();
+  UI.renderPause();
   Audio2.startMusic('majapahit');
 }
 

@@ -102,6 +102,9 @@ const UI = {
     this.bindMinimap($('minimap'));
     window.addEventListener('resize', () => R.resize());
     $('tooltip').style.display = 'none';
+    $('objectives').addEventListener('click', e => {
+      if (this.tutCollapsed || e.target.closest('[data-a="tut-toggle"]')) this.toggleTutorial();
+    });
   },
   // ---------------- screens ----------------
   showMenu() {
@@ -151,7 +154,9 @@ const UI = {
   },
   closeModal() {
     $('modal').hidden = true; $('modal').innerHTML = '';
+    this.hideTip();
     if (this.onModalClose) { const f = this.onModalClose; this.onModalClose = null; f(); }
+    this.renderPause();
   },
   head(title, sub) { return `<div class="sheet-head"><div>${sub ? `<div class="eyebrow">${sub}</div>` : ''}<h2>${title}</h2></div><button class="x" data-a="close" aria-label="${t('set.close')}">×</button></div>`; },
   // ---------------- skirmish setup ----------------
@@ -268,7 +273,6 @@ const UI = {
       }
       if (el.dataset.a === 'fs') { const d = document.documentElement; try { (document.fullscreenElement ? document.exitFullscreen() : d.requestFullscreen()).catch(() => { }); } catch (err) { } }
     }, 'narrow');
-    if (inGame) this.onModalClose = () => this.resume();
   },
   refreshLang() {
     if (this.screen === 'menu') this.showMenu();
@@ -291,10 +295,9 @@ const UI = {
         else { el.dataset.c = '1'; el.textContent = t('pm.confirmDel'); }
       }
     }, 'narrow');
-    if (inGame) this.onModalClose = () => this.resume();
   },
+  // Any open window freezes the game (see the main loop); the manual pause state is kept as it was.
   pauseMenu() {
-    this.pause(true);
     this.modal(`${this.head(t('pm.title'))}<div class="sheet-body"><div class="menu-list">
       <button class="menu-item" data-a="resume">${t('pm.resume')}</button>
       <button class="menu-item" data-a="saveload">${t('pm.saveload')}</button>
@@ -305,21 +308,24 @@ const UI = {
     </div></div>`, (e, el) => {
       if (!el) return;
       const a = el.dataset.a; Audio2.sfx('click');
-      if (a === 'resume') this.closeModal();
+      if (a === 'resume') { this.closeModal(); this.resume(); }
       else if (a === 'saveload') { this.onModalClose = null; this.showLoad(true); }
       else if (a === 'settings') { this.onModalClose = null; this.showSettings(true); }
-      else if (a === 'howto') { this.onModalClose = () => this.resume(); this.showHowTo(); }
+      else if (a === 'howto') this.showHowTo();
       else if (a === 'restart') { if (el.dataset.c) { this.onModalClose = null; this.closeModal(); restartGame(); } else { el.dataset.c = 1; el.textContent = t('pm.confirmRestart'); } }
       else if (a === 'quit') { if (el.dataset.c) { this.onModalClose = null; this.closeModal(); quitToMenu(); } else { el.dataset.c = 1; el.textContent = t('pm.confirmQuit'); } }
     }, 'narrow');
-    this.onModalClose = () => this.resume();
   },
   pause(on) { this.paused = on; this.renderPause(); },
   resume() { this.paused = false; this.renderPause(); },
+  // The PAUSED overlay always mirrors the real state: in a game, paused, and no window open.
   renderPause() {
+    const show = this.screen === 'game' && this.paused && $('modal').hidden;
     let el = $('pausebadge');
-    if (this.paused && $('modal').hidden) { if (!el) { el = document.createElement('div'); el.id = 'pausebadge'; el.className = 'pausebadge'; $('hud').appendChild(el); } el.textContent = t('hud.paused'); }
-    else if (el) el.remove();
+    if (show) {
+      if (!el) { el = document.createElement('div'); el.id = 'pausebadge'; el.className = 'pausebadge'; $('hud').appendChild(el); }
+      const txt = t('hud.paused'); if (el.textContent !== txt) el.textContent = txt;
+    } else if (el) el.remove();
   },
   // ---------------- HUD ----------------
   enterGame() {
@@ -340,28 +346,40 @@ const UI = {
       <div class="agebox"><span id="ageName"></span><div class="agebar" id="ageBar" hidden><i id="ageFill" style="width:0"></i></div></div>
       <div class="spacer"></div>
       <span class="clock num" id="clock">00:00</span>
-      <button class="tbtn" id="btnSpeed" title="${t('hud.speed')}"><span class="num" id="speedV">1.5×</span></button>
+      <button class="tbtn" id="btnSpeed" title="${t('hud.speedHelp')}"><span class="num" id="speedV">${this.speed}×</span></button>
       <button class="tbtn" id="btnPause" aria-label="${t('hud.paused')}">${SVG.pause}</button>
       <button class="tbtn" id="btnIdle" title="${t('hud.idle')} (.)">${SVG.idle}<span class="cnt num" id="idleN">0</span></button>
       <button class="tbtn" id="btnTree" title="${t('hud.techtree')}">${SVG.tree}</button>
       <button class="tbtn" id="btnScore" title="${t('hud.score')}">${SVG.score}</button>
       <button class="tbtn" id="btnMenu" title="${t('hud.menu')} (F10)">${SVG.menu}</button>`;
-    $('btnSpeed').onclick = () => this.cycleSpeed(1);
+    $('btnSpeed').onclick = () => this.cycleSpeed(1, true);
+    $('btnSpeed').oncontextmenu = e => { e.preventDefault(); this.cycleSpeed(-1, true); };
     $('btnPause').onclick = () => this.togglePause();
     $('btnIdle').onclick = () => this.nextIdle();
     $('btnTree').onclick = () => this.showTechTree();
     $('btnScore').onclick = () => this.showScores();
     $('btnMenu').onclick = () => this.pauseMenu();
     for (const el of $('topin').querySelectorAll('[data-tip]')) {
-      el.onmouseenter = () => this.showTip(el, `<div class="tt-t">${t(el.dataset.tip)}</div>${el.dataset.tip === 'res.pop' ? t('tt.popHelp') : t('tt.resHelp')}`);
-      el.onmouseleave = () => this.hideTip();
+      const tip = () => this.showTip(el, `<div class="tt-t">${t(el.dataset.tip)}</div>${el.dataset.tip === 'res.pop' ? t('tt.popHelp') : t('tt.resHelp')}`);
+      el.onpointerenter = e => { if (e.pointerType === 'mouse') tip(); };
+      el.onpointerleave = e => { if (e.pointerType === 'mouse') this.hideTip(); };
+      el.onpointerdown = e => { if (e.pointerType !== 'mouse') { tip(); this.hideTipSoon(); } };
     }
     void p;
   },
-  cycleSpeed(d) { const sp = [1, 1.5, 2, 3]; let i = sp.indexOf(this.speed); i = clamp((i < 0 ? 1 : i) + d, 0, 3); this.speed = sp[i]; Audio2.sfx('click'); },
+  // Button: 1× → 1.5× → 2× → 3× → 1× (wraps). Keys + and −: step up/down without wrapping.
+  cycleSpeed(d, wrap) {
+    const sp = [1, 1.5, 2, 3];
+    let i = sp.indexOf(this.speed); if (i < 0) i = 1;
+    i = wrap ? (i + d + sp.length) % sp.length : clamp(i + d, 0, sp.length - 1);
+    this.speed = sp[i];
+    const v = $('speedV'); if (v) v.textContent = this.speed + '×';
+    Audio2.sfx('click');
+  },
   togglePause() { if (!$('modal').hidden) return; this.paused = !this.paused; this.renderPause(); },
   updateHUD() {
     if (!G || G.human < 0) return;
+    this.renderPause();
     const p = G.players[G.human];
     for (const r of RES) {
       $('rv_' + r).textContent = Math.floor(p.res[r]);
@@ -454,8 +472,10 @@ const UI = {
       b.innerHTML = `<img alt=""><span class="hk">${GRID_KEYS[i]}</span><span class="bd"></span><span class="pr"></span>`;
       b.addEventListener('click', e => { this.slotClick(i, e.shiftKey, false); });
       b.addEventListener('contextmenu', e => { e.preventDefault(); this.slotClick(i, e.shiftKey, true); });
-      b.addEventListener('mouseenter', () => { this.hoverSlot = i; this.slotTip(i); });
-      b.addEventListener('mouseleave', () => { this.hoverSlot = -1; this.hideTip(); });
+      b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { this.hoverSlot = i; this.slotTip(i); } });
+      b.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { this.hoverSlot = -1; this.hideTip(); } });
+      // touch has no hover: show the details briefly, then get out of the way
+      b.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { this.slotTip(i); this.hideTipSoon(); } });
       g.appendChild(b);
       this.slotEls.push(b);
     }
@@ -622,7 +642,8 @@ const UI = {
     x = clamp(x, 8, window.innerWidth - tw - 8);
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   },
-  hideTip() { $('tooltip').style.display = 'none'; },
+  hideTip() { clearTimeout(this.tipT); $('tooltip').style.display = 'none'; },
+  hideTipSoon(ms) { clearTimeout(this.tipT); this.tipT = setTimeout(() => { $('tooltip').style.display = 'none'; }, ms || 2500); },
   // ---------------- modes ----------------
   setMode(m, data) {
     this.mode = m; this.modeData = data || null;
@@ -804,6 +825,10 @@ const UI = {
     cv.addEventListener('pointerup', up);
     cv.addEventListener('pointercancel', e => { this.ptrs.delete(e.pointerId); down.on = false; down.pan = null; R.box = null; });
     cv.addEventListener('pointerleave', () => { this.mouse.in = false; });
+    cv.addEventListener('pointerdown', () => this.hideTip(), true);
+    window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') this.edge = { x: e.clientX, y: e.clientY, in: true }; }, { passive: true });
+    document.documentElement.addEventListener('mouseleave', () => { if (this.edge) this.edge.in = false; });
+    window.addEventListener('blur', () => { if (this.edge) this.edge.in = false; });
     cv.addEventListener('wheel', e => {
       e.preventDefault();
       if (this.screen !== 'game' || !G) return;
@@ -943,9 +968,10 @@ const UI = {
     const sp = 900 * Settings.scroll * dt / R.cam.z;
     let dx = 0, dy = 0;
     if (this.keys.ArrowLeft) dx -= 1; if (this.keys.ArrowRight) dx += 1; if (this.keys.ArrowUp) dy -= 1; if (this.keys.ArrowDown) dy += 1;
-    if (Settings.edge && this.mouse.in && !document.body.classList.contains('touch') && $('modal').hidden) {
-      const m = 6, x = this.mouse.x, y = this.mouse.y;
-      if (x < m) dx -= 1; if (x > R.W - m) dx += 1; if (y < m) dy -= 1; if (y > R.H - m) dy += 1;
+    const ed = this.edge;
+    if (Settings.edge && ed && ed.in && !document.body.classList.contains('touch') && $('modal').hidden && this.mode !== 'place') {
+      const m = 6, W = window.innerWidth, H = window.innerHeight;
+      if (ed.x < m) dx -= 1; if (ed.x > W - m) dx += 1; if (ed.y < m) dy -= 1; if (ed.y > H - m) dy += 1;
     }
     if (dx || dy) { R.cam.x += dx * sp; R.cam.y += dy * sp * .7; R.clampCam(); }
   },
@@ -1007,19 +1033,36 @@ const UI = {
   // ---------------- objectives / tutorial ----------------
   updateObjectives(force) {
     const box = $('objectives');
-    if (!G || !G.cfg.tutorial) { box.hidden = true; return; }
+    if (!G || !G.cfg.tutorial) { box.hidden = true; document.body.classList.remove('has-tut'); return; }
     const p = G.players[G.human];
     let step = G.tutStep || 0;
     while (step < TUT.length && TUT[step].check(p)) { step++; if (step < TUT.length) { Audio2.sfx('research'); } }
     if (step !== G.tutStep || force) {
       G.tutStep = step;
       if (step >= TUT.length) G.tutDone = true;
+      const advanced = !force && step !== G.tutStep;
+      G.tutStep = step;
+      if (step >= TUT.length) G.tutDone = true;
       box.hidden = false;
+      document.body.classList.add('has-tut');
+      if (this.tutCollapsed == null) { const saved = store('eok.tutCollapsed'); this.tutCollapsed = saved != null ? !!saved : window.innerWidth <= 760; }
+      box.classList.toggle('collapsed', this.tutCollapsed);
       const cur = TUT[Math.min(step, TUT.length - 1)];
-      box.innerHTML = `<div class="eyebrow">${t('menu.tutorial')} · ${Math.min(step + 1, TUT.length)}/${TUT.length}</div><h3>${t('tut.title')}</h3>` +
+      const curText = step < TUT.length ? t('tut.' + cur.k) : t('tut.done');
+      box.innerHTML = `<div class="tut-head"><div class="eyebrow">${t('menu.tutorial')} · ${Math.min(step + 1, TUT.length)}/${TUT.length}</div>` +
+        `<button class="tut-tog" data-a="tut-toggle" aria-expanded="${!this.tutCollapsed}">${this.tutCollapsed ? t('tut.show') + ' ▾' : t('tut.hide') + ' ▴'}</button></div>` +
+        `<div class="tut-cur">▸ ${curText}</div>` +
+        `<div class="tut-body"><h3>${t('tut.title')}</h3>` +
         TUT.map((s, i) => `<div class="obj ${i < step ? 'done' : ''}" ${i > step ? 'style="opacity:.45"' : ''}><span>${i < step ? '✓' : i === step ? '▸' : '·'}</span><span>${t('tut.' + s.k)}</span></div>`).join('') +
-        (step < TUT.length ? `<div class="hint">${t('tut.' + cur.k + '.h')}</div>` : `<div class="hint">${t('tut.done')}</div>`);
+        (step < TUT.length ? `<div class="hint">${t('tut.' + cur.k + '.h')}</div>` : `<div class="hint">${t('tut.done')}</div>`) + `</div>`;
+      if (advanced) { box.classList.remove('pulse'); void box.offsetWidth; box.classList.add('pulse'); }
     }
+  },
+  toggleTutorial() {
+    this.tutCollapsed = !this.tutCollapsed;
+    store('eok.tutCollapsed', this.tutCollapsed);
+    Audio2.sfx('click');
+    this.updateObjectives(true);
   },
   // ---------------- modals: tech tree, scores, end ----------------
   showTechTree() {
@@ -1043,14 +1086,12 @@ const UI = {
         return `<button class="tnode ${done ? 'done' : ''} ${lock ? 'lock' : ''}" data-tip="t:${it.id}" aria-label="${esc(techName(it.id))}"><img src="${iconURL('tech', tt.ageUp ? 'age' + tt.ageUp : tt.icon, 0)}" alt=""></button>`;
       }).join('');
     };
-    this.pause(true);
     this.modal(`${this.head(t('hud.techtree'), civName(p.civ))}<div class="sheet-body">
       <div class="legend" style="margin-bottom:10px"><span><i style="box-shadow:0 0 0 2px var(--good)"></i>${t('tree.done')}</span><span><i style="background:#666"></i>${t('tree.locked')}</span><span>${t('tree.hint')}</span></div>
       <div class="scroll-x"><div class="tree">
         <div class="tree-row head"><div></div>${[0, 1, 2, 3].map(a => `<div>${ageName(a)}</div>`).join('')}</div>
         ${rows.map(b => `<div class="tree-row"><div class="tree-b"><img src="${iconURL('bld', b, CIVS[p.civ].arch)}" alt="">${nameOf(b)}</div>${[0, 1, 2, 3].map(a => `<div class="tree-c">${cell(b, a)}</div>`).join('')}</div>`).join('')}
       </div></div></div>`, (e, el) => { void el; });
-    this.onModalClose = () => this.resume();
     const m = $('modal');
     m.onmouseover = e => { const n = e.target.closest('[data-tip]'); if (!n) return; const [k, id] = n.dataset.tip.split(':'); this.showTip(n, k === 'u' ? `<div class="tt-t">${esc(nameOf(id))}</div>${costHTML(ST(p.id, id).cost, p)}${unitDesc(p, id)}` : `<div class="tt-t">${esc(techName(id))}</div>${costHTML(techCost(p, id), p)}<ul>${T[id].fx.map(f => `<li>${describeFx(f)}</li>`).join('')}</ul>`); };
     m.onmouseout = e => { if (e.target.closest('[data-tip]')) this.hideTip(); };
@@ -1063,19 +1104,16 @@ const UI = {
       const trib = allied(H, p.id) && p.id !== H && p.alive ? `<span class="confirm">${['food', 'wood', 'gold', 'stone'].map(r => `<button class="btn small" data-a="trib" data-p="${p.id}" data-r="${r}" title="${t('cmd.tribute')} 100 ${t('res.' + r)}">${SVG[r]}</button>`).join('')}</span>` : '';
       return `<tr><td><span class="pdot" style="background:${PCOLORS[p.color].c}"></span>${esc(p.name)}</td><td>${civName(p.civ)}</td><td>${p.team ? t('dip.team', { n: p.team }) : '—'}</td><td>${p.alive ? rel : t('dip.defeated')}</td><td>${ageName(p.age)}</td><td class="r">${p.pop}</td><td class="r"><b>${sc.total}</b></td><td>${trib}</td></tr>`;
     }).join('');
-    this.pause(true);
     this.modal(`${this.head(t('hud.score'))}<div class="sheet-body"><div class="scroll-x"><table class="tbl"><thead><tr><th>${t('end.player')}</th><th>${t('setup.civ')}</th><th>${t('setup.team')}</th><th>${t('dip.status')}</th><th>${t('dip.age')}</th><th class="r">${t('res.pop')}</th><th class="r">${t('end.score')}</th><th>${me.cnt.market ? t('cmd.tribute') : ''}</th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="muted small">${me.cnt.market ? t('dip.tribHelp', { pct: Math.round(me.tributeFee * 100) }) : t('dip.needMarket')}</p></div>`, (e, el) => {
       if (el && el.dataset.a === 'trib') { const ok = Cmd.tribute(me, +el.dataset.p, el.dataset.r, 100); Audio2.sfx(ok ? 'click' : 'error'); if (!ok) this.feed(t('msg.notEnough'), 'bad'); }
     });
-    this.onModalClose = () => this.resume();
   },
   showEnd() {
     if (this.endShown) return;
     this.endShown = true;
     const H = G.human;
     const won = H >= 0 && teamKey(H) === G.winner;
-    this.pause(true);
     this.endTab = 'summary';
     const render = () => {
       const tab = this.endTab;
@@ -1097,10 +1135,9 @@ const UI = {
       <div class="sheet-foot"><button class="btn ghost" data-a="watch">${t('end.continue')}</button><button class="btn primary" data-a="menu">${t('end.menu')}</button></div>`, (e, el) => {
       if (!el) return;
       if (el.dataset.a === 'tab') { this.endTab = el.dataset.tab; render(); }
-      if (el.dataset.a === 'watch') { this.closeModal(); this.resume(); }
+      if (el.dataset.a === 'watch') this.closeModal();
       if (el.dataset.a === 'menu') { this.onModalClose = null; this.closeModal(); quitToMenu(); }
     });
-    this.onModalClose = () => this.resume();
     render();
   },
 };
