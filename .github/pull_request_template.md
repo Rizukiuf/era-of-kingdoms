@@ -1,13 +1,14 @@
-## Ringkasan
-<!-- Apa yang berubah dan kenapa. Tautkan issue: "Closes #12". -->
+## Summary
+<!-- What changed and why. Link the issue: "Closes #12". -->
 
-## Cara menguji
-- [ ] `node build.mjs` dijalankan dan `index.html` ikut di-commit
+## How it was tested
+- [ ] `node build.mjs` run and `index.html` committed
 - [ ] `node tools/sim-test.mjs 30` → `OK: no errors.`
-- [ ] Dimainkan di browser (jelaskan skenario yang dicoba)
-- [ ] Teks baru diterjemahkan ke 7 bahasa (atau sebutkan yang belum)
+- [ ] `node tools/browser-smoke.mjs` passes (UI changes)
+- [ ] Played in a browser (describe what you tried)
+- [ ] New text translated into all 7 languages (or list what is missing)
 
-## Tangkapan layar
-<!-- Wajib untuk perubahan tampilan. -->
+## Screenshots
+<!-- Required for visual changes. -->
 
-## Catatan / pertanyaan terbuka
+## Notes / open questions
