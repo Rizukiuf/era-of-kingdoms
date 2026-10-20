@@ -555,6 +555,18 @@ const R = {
       }
       return h.e;
     }
+    // farms lie flat on the ground and are not in the sprite hit list: pick them by the tile under the cursor
+    return this.farmAt(wx, wy);
+  },
+  farmAt(wx, wy) {
+    if (!G || !G.occ) return null;
+    const tx = Math.floor(wx), ty = Math.floor(wy);
+    if (tx < 0 || ty < 0 || tx >= G.N || ty >= G.N) return null;
+    const f = G.byId.get(G.occ[ty * G.N + tx]);
+    if (!f || f.dead || f.k !== 'b' || f.type !== 'farm') return null;
+    // only farms the player can see (the same rule as drawing them)
+    const hv = G.human >= 0 && !G.cfg.attract ? G.vis[G.human] : null;
+    if (!hv || G.cfg.reveal === 'all' || allied(f.owner, G.human) || (f.seen & (1 << G.human)) || hv[tIdx(f.x + f.w / 2, f.y + f.h / 2)] === 2) return f;
     return null;
   },
   // ---------------- minimap ----------------
