@@ -148,6 +148,34 @@ try {
     !!vPt && pickedV.length === 1 && pickedV[0] === behindPt.id && pickedTc.length === 1 && pickedTc[0] === behindPt.tc,
     `villager ${behindPt.id} click → ${pickedV.join(',') || 'nothing'}, town center ${behindPt.tc} roof click → ${pickedTc.join(',') || 'nothing'}`);
 
+  // 6c) farms lie flat on the ground: clicking one selects it, and right-clicking it with a villager sends
+  //     the villager to farm it
+  const farm = await page.evaluate(() => {
+    const pl = G.players[G.human], tc = G.blds.find(b => b.owner === G.human && b.type === 'tc');
+    let f = null;
+    for (let r = 4; r < 14 && !f; r++) for (let dx = -r; dx <= r && !f; dx++) for (const dy of [-r, r]) {
+      if (!f && canPlace(pl, 'farm', tc.x + dx, tc.y + dy)) f = spawnBld('farm', G.human, tc.x + dx, tc.y + dy, true);
+    }
+    if (!f) return null;
+    const u = G.units.find(v => v.owner === G.human && v.type === 'villager' && !v.gIn);
+    R.centerOn(f.x + f.w / 2, f.y + f.h / 2); R.cam.z = 1.2; UI.paused = true;
+    return { id: f.id, v: u.id };
+  });
+  let farmSel = [], farmOrd = 'no farm placed';
+  if (farm) {
+    await page.waitForTimeout(300);
+    const corner = await page.evaluate(id => { const f = byId(id); return R.toScreen(f.x + .5, f.y + f.h - .5); }, farm.id); // away from any farmer
+    await page.mouse.click(corner[0], corner[1]);
+    farmSel = await page.evaluate(() => UI.sel.slice());
+    await page.evaluate(id => UI.select([id], false), farm.v);
+    await page.mouse.click(corner[0], corner[1], { button: 'right' });
+    farmOrd = await page.evaluate(id => { const u = byId(id); return u.ord.t + ':' + (u.ord.rtype || ''); }, farm.v);
+  }
+  await page.evaluate(() => { UI.paused = false; });
+  check('click selects a farm, right-click sends a villager to farm it',
+    !!farm && farmSel.length === 1 && farmSel[0] === farm.id && farmOrd === 'gather:farm',
+    `farm click → ${farmSel.join(',') || 'nothing'}, villager order → ${farmOrd}`);
+
   // 7) the speed button cycles 1× → 1.5× → 2× → 3× and wraps back to 1×
   const speeds = [];
   for (let i = 0; i < 5; i++) { await page.click('#btnSpeed'); speeds.push(await page.evaluate(() => UI.speed)); }
