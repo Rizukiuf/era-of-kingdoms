@@ -122,6 +122,7 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 /* ---------- HUD ---------- */
 #hud { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
 #hud > * { pointer-events: auto; }
+#hud > .pausebadge { pointer-events: none; } /* the PAUSED text must not block clicks on the map */
 #topbar { position: absolute; left: 0; right: 0; top: 0; padding-top: env(safe-area-inset-top, 0px); background: linear-gradient(180deg, rgba(14, 19, 35, .97), rgba(14, 19, 35, .9)); border-bottom: 1px solid var(--line); box-shadow: 0 4px 18px rgba(0, 0, 0, .45); }
 #topbar .in { display: flex; align-items: center; gap: 14px; height: 40px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
 .resb { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 2px 6px; border-radius: 3px; cursor: default; }

@@ -127,6 +127,27 @@ try {
   const loaded = await page.evaluate(() => ({ u: G.units.length, b: G.blds.length }));
   check('save and load round trip', saved && Math.abs(loaded.u - before.u) <= 3 && Math.abs(loaded.b - before.b) <= 2, `before ${JSON.stringify(before)}, after ${JSON.stringify(loaded)}`);
 
+  // 6b) a villager standing just north of (behind) the town center can still be clicked,
+  //     and clicking the town center's roof still selects the town center
+  const behindPt = await page.evaluate(() => {
+    const tc = G.blds.find(b => b.owner === G.human && b.type === 'tc');
+    const u = G.units.find(v => v.owner === G.human && v.type === 'villager' && !v.gIn);
+    u.x = u.px = tc.x + tc.w / 2; u.y = u.py = tc.y - .9; u.ord = { t: 'idle' }; u.path = null;
+    R.centerOn(tc.x + 2, tc.y + 1); R.cam.z = 1.2; UI.paused = true;
+    return { id: u.id, tc: tc.id };
+  });
+  await page.waitForTimeout(300);
+  const vPt = await page.evaluate(id => { const u = byId(id); const [x, y] = R.toScreen(u.x, u.y); return [x, y - 9 * R.cam.z]; }, behindPt.id); // the villager's body
+  if (vPt) await page.mouse.click(vPt[0], vPt[1]);
+  const pickedV = await page.evaluate(() => UI.sel.slice());
+  const roofPt = await page.evaluate(id => { const b = byId(id); const [x, y] = R.toScreen(b.x + b.w / 2, b.y + b.h / 2); return [x, y - 50 * R.cam.z]; }, behindPt.tc);
+  await page.mouse.click(roofPt[0], roofPt[1]);
+  const pickedTc = await page.evaluate(() => UI.sel.slice());
+  await page.evaluate(() => { UI.paused = false; });
+  check('villager behind the town center is clickable, roof still selects the town center',
+    !!vPt && pickedV.length === 1 && pickedV[0] === behindPt.id && pickedTc.length === 1 && pickedTc[0] === behindPt.tc,
+    `villager ${behindPt.id} click → ${pickedV.join(',') || 'nothing'}, town center ${behindPt.tc} roof click → ${pickedTc.join(',') || 'nothing'}`);
+
   // 7) the speed button cycles 1× → 1.5× → 2× → 3× and wraps back to 1×
   const speeds = [];
   for (let i = 0; i < 5; i++) { await page.click('#btnSpeed'); speeds.push(await page.evaluate(() => UI.speed)); }

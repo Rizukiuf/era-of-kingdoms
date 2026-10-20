@@ -309,7 +309,7 @@ const R = {
     const age = Math.min(3, p.age);
     const ageI = b.type === 'house' || b.type === 'mill' || b.type === 'lumber' || b.type === 'mining' ? Math.min(age, 3) : age;
     const wx = b.x, wy = b.y;
-    let r;
+    let r, hs = null, cut = 0; // hs: the sprite clicks are tested against; cut: logical px hidden at its top
     const fill = ghost ? .55 : 1;
     if (b.type === 'palisade' || b.type === 'wall' || b.type === 'gate') this.shadow(ctx, wx + .5, wy + .5, 18, 7);
     if (!b.built && !ghost) {
@@ -319,7 +319,7 @@ const R = {
         const s = bldSprite(b.type, arch, ageI);
         const c = this.cam, z = c.z;
         const sx = (isoX(wx, wy) - c.x) * z + this.W / 2, sy = (isoY(wx, wy) - c.y) * z + this.H / 2;
-        const cut = (1 - b.prog) * s.ay; // logical px of the sprite still hidden above ground
+        hs = s; cut = (1 - b.prog) * s.ay; // logical px of the sprite still hidden above ground
         ctx.globalAlpha = .92;
         ctx.drawImage(s.c, 0, cut * s.s, s.c.width, s.c.height - cut * s.s, sx - s.ax * z, sy - s.ay * z + cut * z, s.w * z, s.h * z - cut * z);
         ctx.globalAlpha = 1;
@@ -332,8 +332,11 @@ const R = {
       const s = bldSprite(b.type, arch, ageI);
       r = this.spriteAt(ctx, s, wx, wy, 1, false, fill);
       if (r && !ghost) this.buildingLive(ctx, b, arch);
+      hs = s;
     }
-    if (r && !ghost) this.hits.push({ e: b, x: r[0], y: r[1], w: r[2], h: r[3], bld: true });
+    if (r && !ghost) {
+      this.hits.push({ e: b, x: r[0], y: r[1], w: r[2], h: r[3], bld: true, s: hs, cut, ox: r[4], oy: r[5] });
+    }
   },
   buildingLive(ctx, b, arch) {
     const d = B[b.type], p = G.players[b.owner], pc = PCOLORS[p.color];
@@ -515,18 +518,39 @@ const R = {
     // drag box
     if (this.box) { const b = this.box; ctx.strokeStyle = 'rgba(160,255,160,.9)'; ctx.lineWidth = 1; ctx.fillStyle = 'rgba(160,255,160,.08)'; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.strokeRect(b.x0 + .5, b.y0 + .5, b.x1 - b.x0, b.y1 - b.y0); }
   },
+  // is the building sprite of hit h opaque at screen point (sx, sy)? Alpha masks are built once per sprite.
+  solidAt(h, sx, sy) {
+    const s = h.s, z = this.cam.z;
+    const lx = Math.floor(s.ax + (sx - h.ox) / z), ly = Math.floor(s.ay + (sy - h.oy) / z); // logical sprite px
+    if (lx < 0 || ly < 0 || lx >= s.w || ly >= s.h || ly < h.cut) return false;
+    if (!s.mask) {
+      const W = s.c.width, H = s.c.height, k = s.s, mw = Math.ceil(s.w), mh = Math.ceil(s.h);
+      const m = new Uint8Array(mw * mh);
+      try {
+        const d = s.c.getContext('2d').getImageData(0, 0, W, H).data;
+        for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
+          // a logical pixel is solid if any device pixel in it is fairly opaque
+          let a = 0;
+          for (let yy = Math.floor(y * k); yy < Math.min(H, Math.ceil((y + 1) * k)) && a < 140; yy++)
+            for (let xx = Math.floor(x * k); xx < Math.min(W, Math.ceil((x + 1) * k)); xx++) { const v = d[(yy * W + xx) * 4 + 3]; if (v > a) a = v; }
+          m[y * mw + x] = a >= 140 ? 1 : 0;
+        }
+      } catch (e) { m.fill(1); }
+      s.mask = { m, w: mw };
+    }
+    return s.mask.m[ly * s.mask.w + lx] === 1;
+  },
   pick(sx, sy) {
     const [wx, wy] = this.toWorld(sx, sy);
     for (let i = this.hits.length - 1; i >= 0; i--) {
       const h = this.hits[i];
       if (sx < h.x || sy < h.y || sx > h.x + h.w || sy > h.y + h.h) continue;
       if (h.bld) {
+        // a building is hit on its ground footprint or on a solid pixel of its picture,
+        // not on the empty margin, shadow or smoke around it
         const b = h.e;
-        if (wx >= b.x - .2 && wy >= b.y - .2 && wx <= b.x + b.w + .2 && wy <= b.y + b.h + .2) return b;
-        // roof area: above footprint in screen space
-        const [cx] = this.toScreen(b.x + b.w / 2, b.y + b.h / 2);
-        const [, by] = this.toScreen(b.x + b.w, b.y + b.h);
-        if (Math.abs(sx - cx) < (b.w + b.h) * 12 * this.cam.z && sy < by) return b;
+        if (wx >= b.x && wy >= b.y && wx <= b.x + b.w && wy <= b.y + b.h) return b;
+        if (h.s && this.solidAt(h, sx, sy)) return b;
         continue;
       }
       return h.e;
