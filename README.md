@@ -1,256 +1,327 @@
-# Era of Kingdoms — v1.0.0 (prototipe)
+# Era of Kingdoms
 
-Game strategi perang real-time bergaya *Age of Empires* yang berjalan sepenuhnya di browser.
-8 peradaban, 4 zaman, lawan komputer dengan 4 tingkat kesulitan, tutorial, simpan/muat, dan 7 bahasa
-(Inggris, Indonesia, Spanyol, Prancis, Jerman, Portugis, Jepang).
+**Play now: https://rizukiuf.github.io/era-of-kingdoms/**
 
-Tidak ada server, database, atau pustaka pihak ketiga. Grafis digambar dengan Canvas 2D, suara dan
-musik disintesis dengan Web Audio API. Seluruh game terkumpul menjadi satu file `index.html` (±510 KB).
+A real-time strategy game in the style of *Age of Empires* that runs entirely in the browser, on desktop and on
+phones. Gather resources, build a town, advance through four ages, and defeat computer opponents with
+armies, siege engines and fleets.
+
+There is no server, database or third-party library. Graphics are drawn in code with Canvas 2D, and sound
+effects and music are synthesized with the Web Audio API. The whole game builds into a single `index.html`
+file (about 530 KB) that also works offline.
+
+Version 1.0.0 (first playable release).
 
 ---
 
-## 1. Isi paket
+## Contents
+
+1. [Playing](#1-playing)
+2. [Features](#2-features)
+3. [Controls](#3-controls)
+4. [Hosting your own copy](#4-hosting-your-own-copy)
+5. [Project layout](#5-project-layout)
+6. [Development](#6-development)
+7. [Adding content](#7-adding-content)
+8. [Testing](#8-testing)
+9. [Contributing and working with AI agents](#9-contributing-and-working-with-ai-agents)
+10. [Known limitations and ideas](#10-known-limitations-and-ideas)
+
+---
+
+## 1. Playing
+
+### Online
+Open **https://rizukiuf.github.io/era-of-kingdoms/** in a recent Chrome, Edge, Firefox or Safari. This
+always runs the latest version of the `main` branch. On a phone, landscape orientation gives the most room.
+
+### Offline
+1. Download `index.html` from this repository (or **Code → Download ZIP** and extract it).
+2. Double-click `index.html`. The game opens in your browser with no installation and no internet connection.
+
+Notes:
+- **Fonts.** When online, the game loads two fonts from Google Fonts. Offline it falls back to the system's
+  serif and sans-serif fonts. It looks slightly different and plays the same.
+- **Saved games** live in the browser's storage (localStorage), not in files. They exist only in that browser on
+  that device, and clearing site data or using a private window removes them.
+- Some browsers restrict storage for pages opened straight from a file (`file://`). If saving does not work,
+  use a local server (below).
+
+### Local server (optional)
+Useful when saving does not work from a file, or to play on a phone over the same Wi-Fi network. Open a
+terminal in the project folder and run **one** of:
+
+```bash
+python3 -m http.server 8000      # Python 3 (on Windows: py -m http.server 8000)
+npx serve .                      # Node.js
+```
+
+Then open **http://localhost:8000**. From a phone or tablet on the same Wi-Fi, open
+`http://<your-computer's-IP>:8000` (find the IP with `ipconfig` on Windows or `ip addr` / `ifconfig` on
+macOS and Linux, for example `192.168.1.5`). If the phone cannot connect, allow Python or Node through the
+computer's firewall.
+
+---
+
+## 2. Features
+
+- **8 civilizations**, each with its own bonuses, unique unit, architecture style and musical scale:
+
+  | Civilization | Unique unit | Architecture | Strength |
+  |---|---|---|---|
+  | Majapahit | Bhayangkara | Nusantara | Maritime economy, rice terraces, elite palace guard |
+  | Britons | Longbowman | Western | Archers with the longest range |
+  | Franks | Throwing Axeman | Western | Heavy cavalry and strong castles |
+  | Mongols | Mangudai | East Asian | Fast horse archers, skilled hunters |
+  | Japanese | Samurai | East Asian | Infantry that attacks faster |
+  | Ottomans | Janissary | Middle Eastern | Gunpowder units and bombards |
+  | Byzantines | Cataphract | Middle Eastern | Strong walls, cheap counter-units, healing monks |
+  | Chinese | Chu Ko Nu | East Asian | Larger starting workforce, cheaper research |
+
+- **4 ages** (Dark, Feudal, Castle, Imperial), **40 trainable units** (infantry, archers, cavalry, siege, monks,
+  ships), **21 building types**, **71 technologies** and upgrade lines.
+- **Combat model** with melee and pierce armor, attack bonuses against unit classes, projectiles that can miss,
+  garrisoning, stances, monks that heal and convert, relics and wonders.
+- **Skirmish setup:** up to 8 players with optional teams; 5 map types (Continental, Rivers, Coastal, Forest Kingdom,
+  Savanna) in 4 sizes; 5 victory conditions (Standard, Conquest, Wonder race, Relics, Time limit); starting
+  resources, starting age, map visibility, population limit and peace treaty options.
+- **Computer opponents** at 4 difficulty levels (Easy, Normal, Hard, Hardest) that build an economy, research,
+  counter your army composition, defend and attack in waves.
+- **11-step interactive tutorial**, a how-to-play guide, a tech tree, score screens and statistics at the end.
+- **Save and load:** 3 save slots plus an autosave.
+- **7 languages:** English, Bahasa Indonesia, Español, Français, Deutsch, Português, 日本語.
+- **Touch controls** and a phone layout, alongside mouse and keyboard with hotkeys.
+
+---
+
+## 3. Controls
+
+| Input | Action |
+|---|---|
+| Left click / drag | Select a unit / select several |
+| Right click | Move, gather, attack, build or repair, depending on the target |
+| Shift | Queue orders, add to the selection, train 5 units at once |
+| Double click / Ctrl+click | Select all units of that type on screen |
+| Ctrl+1…9, then 1…9 | Create a control group, recall it (press twice to jump to it) |
+| Q W E R T / A S D F G / Z X C V B | Command card buttons |
+| A | Attack-move (military units) |
+| H | Select the town center |
+| . (period) | Next idle villager |
+| Space | Jump to the last attack |
+| Delete | Delete the selection |
+| P / F3 | Pause |
+| + / − | Game speed. The speed button in the top bar steps up on click and wraps from 3× back to 1×; right-click steps down |
+| Arrow keys / screen edge / middle-button drag | Scroll the map |
+| Mouse wheel | Zoom |
+| Alt + right click | Garrison units in a building |
+| Esc / F10 | Cancel / game menu |
+
+**Selection panel** (bottom of the screen): click an icon in the production queue to cancel it and get the
+resources back (the last item of a stack goes first). With several units selected, click a unit's icon to
+select only that unit, Shift+click to remove it from the selection, or Ctrl+click to keep only units of that type.
+
+**Touch screens:** tap to select and give orders, drag with one finger to scroll, pinch to zoom, long-press then
+drag to box-select. Tap a command button to see its description (it hides after a few seconds). The tutorial
+panel can be collapsed with **Hide**; on phones it starts collapsed and shows only the current objective, and
+tapping it opens the full list.
+
+---
+
+## 4. Hosting your own copy
+
+The game is a static site: hosting `index.html` is all it needs.
+
+### GitHub Pages
+This repository is published with GitHub Pages from the `main` branch. For your own fork:
+1. Fork the repository, or create a **public** repository and upload the files (`index.html` must be at the root).
+   On free accounts GitHub Pages works only for public repositories.
+2. Go to **Settings → Pages**, choose **Source: Deploy from a branch**, branch **main**, folder **/ (root)**, and
+   **Save**.
+3. After a minute or two the game is at `https://<username>.github.io/<repository>/`. Every push to `main`
+   updates it.
+
+### Netlify Drop (no account needed)
+1. Open **https://app.netlify.com/drop**.
+2. Drag the project folder (or just `index.html`) onto the page.
+3. You get an address like `https://random-name.netlify.app`. Create a free account and claim the site to keep it
+   and to update it later (**Deploys** tab → drag the new version).
+
+### itch.io
+1. Create an account → **Upload new project** → *Kind of project*: **HTML**.
+2. Upload `index.html` (a single file is fine) or a zip with `index.html` at the top level, and mark it to be
+   played in the browser.
+3. *Embed options*: **Click to launch in fullscreen** is recommended because the layout adapts to the screen. For
+   *Embed in page*, use at least 1280 × 720 and enable the fullscreen button.
+4. Tick **Mobile friendly**, set the visibility to *Public* and save.
+
+### Others
+Cloudflare Pages, Vercel, Firebase Hosting or any ordinary web host (cPanel/FTP): upload `index.html` to the
+site's public folder.
+
+---
+
+## 5. Project layout
 
 ```
 era-of-kingdoms/
-├── index.html            ← GAME SIAP MAIN (hasil build). Cukup file ini untuk bermain/hosting.
-├── README.md             ← dokumen ini
-├── AGENTS.md             ← panduan kerja untuk AI agent (Claude Code, dll.)
-├── .github/              ← CI (uji otomatis di GitHub), template issue & pull request
-├── build.py              ← skrip build (Python 3): menggabungkan src/ menjadi index.html
-├── build.mjs             ← skrip build alternatif (Node.js), hasilnya identik
-├── src/                  ← SOURCE CODE (yang Anda ubah saat mengembangkan)
-│   ├── shell.html        ← HTML, CSS, kerangka HUD
-│   ├── data.js           ← data game: unit, bangunan, teknologi, peradaban
-│   ├── util.js           ← matematika, RNG, noise, pathfinding A*
-│   ├── i18n_ui.js        ← fungsi terjemahan t()/setLang() + teks antarmuka
-│   ├── map.js            ← generator peta
-│   ├── sim.js            ← simulasi inti
-│   ├── cmd.js            ← perintah pemain/AI
-│   ├── ai.js             ← lawan komputer
-│   ├── art_units.js      ← tekstur medan + gambar unit
-│   ├── art_bld.js        ← gambar bangunan, sumber daya, ikon
-│   ├── render.js         ← renderer isometrik, kabut perang, peta mini
-│   ├── i18n_game.js      ← nama & deskripsi konten game, panduan, tutorial
-│   ├── ui.js             ← menu, HUD, panel perintah, input
-│   ├── audio.js          ← efek suara & musik generatif
-│   └── main.js           ← siklus game, loop utama, simpan/muat
-└── tools/
-    ├── sim-test.mjs      ← uji simulasi AI vs AI tanpa browser (tanpa instalasi apa pun)
-    └── browser-smoke.mjs ← uji otomatis di browser (opsional, butuh Playwright)
+├── index.html            ← the playable game (generated by the build; do not edit by hand)
+├── README.md             ← this document
+├── AGENTS.md             ← working instructions for AI coding agents
+├── build.py              ← build script (Python 3): concatenates src/ into index.html
+├── build.mjs             ← the same build in Node.js; produces an identical file
+├── src/                  ← source code: make all changes here
+│   ├── shell.html        ← HTML and CSS for menus and HUD
+│   ├── data.js           ← game data: units, buildings, technologies, civilizations
+│   ├── util.js           ← math helpers, seeded RNG, noise, A* pathfinding, storage helpers
+│   ├── i18n_ui.js        ← t()/setLang() and interface text in 7 languages
+│   ├── map.js            ← map generator
+│   ├── sim.js            ← simulation core
+│   ├── cmd.js            ← player and AI commands
+│   ├── ai.js             ← computer opponents
+│   ├── art_units.js      ← terrain texture and unit drawing
+│   ├── art_bld.js        ← buildings, resources and command icons
+│   ├── render.js         ← isometric renderer, fog of war, minimap, click picking
+│   ├── i18n_game.js      ← names and descriptions of game content, guide, tutorial
+│   ├── ui.js             ← menus, HUD, command card, input
+│   ├── audio.js          ← synthesized sound effects and generative music
+│   └── main.js           ← game lifecycle, main loop, save/load
+├── tools/
+│   ├── sim-test.mjs      ← headless AI-vs-AI simulation test (needs only Node.js)
+│   └── browser-smoke.mjs ← automated test in a real browser (needs Playwright)
+└── .github/              ← CI workflow, issue templates, pull request template
 ```
 
 ---
 
-## 2. Bermain offline (paling mudah)
+## 6. Development
 
-1. Ekstrak file zip.
-2. Klik dua kali **`index.html`**. Game terbuka di browser (Chrome, Edge, Firefox, atau Safari versi baru).
-3. Selesai. Tidak perlu internet dan tidak perlu instalasi.
-
-Catatan:
-- **Font.** Saat online, game memuat dua font dari Google Fonts. Saat offline, game otomatis memakai font
-  cadangan (serif dan sans-serif bawaan sistem). Tampilannya sedikit berbeda, permainannya sama.
-- **Simpanan (save).** Disimpan di penyimpanan browser (localStorage), bukan di file. Simpanan hanya ada di
-  browser dan perangkat yang sama. Menghapus data situs atau memakai mode penyamaran akan menghapusnya.
-- Jika simpanan tidak tersimpan saat dibuka langsung dari file (beberapa browser membatasi penyimpanan untuk
-  `file://`), gunakan server lokal di bagian 3.
-- Untuk ponsel, cara paling praktis adalah hosting online (bagian 4) atau server lokal lewat Wi-Fi (bagian 3).
-
----
-
-## 3. Bermain lewat server lokal (opsional)
-
-Berguna agar penyimpanan selalu berfungsi, atau untuk memainkan game dari ponsel di jaringan Wi-Fi yang sama.
-
-Buka terminal / Command Prompt di folder `era-of-kingdoms`, lalu jalankan **salah satu**:
+Make every change in `src/`, then rebuild `index.html`:
 
 ```bash
-python -m http.server 8000      # Python 3 (di Windows bisa juga: py -m http.server 8000)
-npx serve .                     # Node.js
+node build.mjs        # Node.js
+python3 build.py      # or Python 3 (Windows: py build.py)
 ```
 
-Lalu buka **http://localhost:8000** di browser.
+Reload `index.html` in the browser to see the result, and keep the browser console (F12) open to catch errors.
+Commit the regenerated `index.html` together with the source change: GitHub Pages serves that file, and CI fails
+if it does not match `src/`.
 
-Dari ponsel/tablet di Wi-Fi yang sama: buka `http://<IP-komputer-Anda>:8000`
-(cari IP dengan `ipconfig` di Windows atau `ifconfig` / `ip addr` di macOS/Linux, misalnya `192.168.1.5`).
-Jika tidak bisa terhubung, izinkan Python/Node di firewall komputer.
+The files in `src/` are classic scripts that share global variables, so their order matters. It is defined in
+`ORDER` in both `build.py` and `build.mjs`; a new file must be added to both.
+`python3 build.py --fragment name.html` writes a version without the `<html>`/`<head>` wrapper for embedding in
+another page.
 
----
+### Architecture
 
-## 4. Online / hosting gratis
-
-Game ini adalah situs statis: cukup unggah `index.html`. Tidak perlu server khusus atau backend.
-
-### A. Netlify Drop — tercepat, tanpa akun
-1. Buka **https://app.netlify.com/drop**.
-2. Seret folder `era-of-kingdoms` (atau file zip-nya) ke halaman itu.
-3. Beberapa detik kemudian Anda mendapat alamat seperti `https://nama-acak.netlify.app`.
-4. Daftar akun gratis lalu *claim* situs tersebut agar tersimpan di dashboard dan bisa diperbarui.
-   Untuk memperbarui: buka situsnya di dashboard → tab **Deploys** → seret folder versi baru.
-
-### B. GitHub Pages — gratis, cocok untuk pengembangan berkelanjutan
-1. Buat akun di github.com, lalu buat repository **publik** baru (misalnya `era-of-kingdoms`).
-   Untuk akun gratis, GitHub Pages hanya tersedia di repository publik.
-2. Unggah seluruh isi folder (**Add file → Upload files**). Pastikan `index.html` berada di root repository.
-3. Buka **Settings → Pages**.
-4. Di bagian *Build and deployment*, pilih **Source: Deploy from a branch**, branch **main**, folder **/ (root)**, lalu **Save**.
-5. Setelah beberapa menit, game tersedia di `https://<username>.github.io/era-of-kingdoms/`.
-6. Untuk memperbarui: unggah `index.html` baru ke repository; situs ikut diperbarui otomatis.
-
-### C. itch.io — platform komunitas game indie
-1. Buat akun di itch.io → **Upload new project**.
-2. *Kind of project*: **HTML**.
-3. Unggah **`index.html`** saja (file mandiri boleh diunggah tanpa zip), atau zip yang berisi `index.html`
-   di level teratas. Tandai file itu untuk dimainkan di browser.
-4. *Embed options*: pilih **Click to launch in fullscreen** (disarankan, karena tata letak game menyesuaikan
-   ukuran layar). Jika memilih *Embed in page*, gunakan ukuran minimal 1280 × 720 dan aktifkan tombol fullscreen.
-5. Centang **Mobile friendly** (game mendukung layar sentuh).
-6. Atur visibilitas menjadi *Public* lalu simpan.
-
-### D. Alternatif lain
-Cloudflare Pages, Vercel, Firebase Hosting, atau hosting web biasa (cPanel/FTP): cukup unggah `index.html`
-ke folder publik situs.
-
----
-
-## 5. Mengembangkan & membangun ulang
-
-Semua perubahan dilakukan di folder `src/`. Setelah mengubah kode, buat ulang `index.html`:
-
-```bash
-python3 build.py      # atau: python build.py   (Windows: py build.py)
-node build.mjs        # alternatif jika memakai Node.js
-```
-
-Lalu buka ulang `index.html` di browser, atau unggah ke hosting untuk memperbarui versi online.
-
-Saat pengembangan, buka konsol browser (F12) untuk melihat pesan error.
-
-Urutan modul penting karena modul yang dimuat belakangan memakai variabel global dari modul sebelumnya.
-Urutannya ada di `ORDER` dalam `build.py` dan `build.mjs`. Jika menambah file baru, tambahkan di kedua skrip.
-
-`python3 build.py --fragment nama.html` menghasilkan versi tanpa tag `<html>/<head>`, untuk disisipkan
-ke halaman lain.
-
----
-
-## 6. Arsitektur singkat
-
-| Modul | Tanggung jawab |
+| Module | Responsibility |
 |---|---|
-| `data.js` | Semua angka game: statistik unit (`U`), bangunan (`B`), teknologi (`T`), peradaban (`CIVS`), laju mengumpulkan (`GATHER`), jalur peningkatan unit (`LINES`). |
-| `sim.js` | Simulasi deterministik dengan langkah tetap 30 kali per detik game (`STEP`). Entitas, perintah unit (`ORD.*`), ekonomi, pertempuran (armor jarak dekat/tusuk, bonus, proyektil yang bisa meleset), teknologi (`ST()` menghitung statistik setelah bonus), kabut perang, kondisi menang, skor. |
-| `cmd.js` | `Cmd.*` adalah satu-satunya jalur bagi UI dan AI untuk mengubah simulasi: bergerak, menyerang, membangun, melatih, meneliti, pasar, upeti, lonceng kota. |
-| `ai.js` | `AI.think(p)` dipanggil berkala untuk tiap pemain komputer: ekonomi, pembangunan, riset, produksi pasukan sesuai komposisi musuh, pertahanan, gelombang serangan. Tingkat kesulitan ada di `AI_LEVELS`. |
-| `render.js` | Kamera isometrik (tile 64 × 32), medan sebagai satu tekstur besar, pengurutan kedalaman sprite, kabut, partikel, peta mini. |
-| `art_*.js` | Semua gambar dibuat dengan kode Canvas lalu di-cache. Unit di `UNIT_ART`, bangunan di `drawBld()` dengan 4 gaya arsitektur (`ARCH`: west, nusa, east, mideast). |
-| `ui.js` | Menu, pengaturan skirmish, HUD, panel perintah 5 × 3 (hotkey Q–B), tooltip, input mouse/keyboard/sentuh, modal (pohon teknologi, skor, layar akhir). |
-| `main.js` | Loop `requestAnimationFrame` dengan akumulator langkah tetap, simpan/muat (`serializeGame`/`restoreGame`), pertempuran AI di latar menu. |
+| `data.js` | Every game number: unit stats (`U`), buildings (`B`), technologies (`T`), civilizations (`CIVS`), gather rates (`GATHER`), unit upgrade lines (`LINES`). |
+| `sim.js` | Deterministic simulation with a fixed step of 30 ticks per game second (`STEP`): entities, unit orders (`ORD.*`), economy, combat, technologies (`ST()` returns stats after bonuses), fog of war, victory conditions and score. |
+| `cmd.js` | `Cmd.*` is the only way the UI and the AI change the simulation: move, attack, build, train, research, market, tribute, town bell. |
+| `ai.js` | `AI.think(p)` runs regularly for each computer player: economy, construction, research, army composition against the enemy, defense, attack waves. Difficulty levels are in `AI_LEVELS`. |
+| `render.js` | Isometric camera (64 × 32 tiles), terrain as one large texture, depth sorting, fog, particles, minimap, and picking (what is under the cursor). |
+| `art_*.js` | All graphics are drawn with Canvas code and cached as sprites. Units in `UNIT_ART`; buildings in `drawBld()` with 4 architecture styles (`ARCH`: west, nusa, east, mideast). |
+| `ui.js` | Menus, skirmish setup, HUD, 5 × 3 command card (hotkeys Q–B), tooltips, mouse/keyboard/touch input, windows (tech tree, scores, end screen), tutorial. |
+| `main.js` | `requestAnimationFrame` loop with a fixed-step accumulator, save/load (`serializeGame`/`restoreGame`), the AI battle behind the main menu. |
 
-Kunci localStorage: `eok.settings`, `eok.setup`, `eok.save.<slot>`, `eok.meta.<slot>` (slot: `auto`, `1`, `2`, `3`).
-
----
-
-## 7. Cara menambah konten
-
-**Unit baru**
-1. `data.js`: tambahkan entri di `U`, misalnya
-   `pemanahGajah: { cls: ['cavalry','archer'], hp: 200, atk: 7, at: 'p', a: [1, 3], rng: 5, rof: 2.5, spd: .8, los: 6, cost: { food: 120, gold: 80 }, time: 35, from: 'castle', age: 2, r: .4, proj: 'arrow', acc: .8, weak: ['spear','monk'] }`.
-   Kolom penting: `at` jenis serangan (`'m'` jarak dekat, `'p'` tusuk/proyektil), `a` armor `[jarak dekat, tusuk]`,
-   `bonus` bonus serangan per kelas (misalnya `{ cavalry: 15 }`), `rng` jangkauan dalam tile, `spd` tile per detik.
-2. Daftarkan di bangunan yang melatihnya: `B.<bangunan>.trains`.
-3. `art_units.js`: tambahkan gaya gambar di `UNIT_ART` (helm, senjata, perisai, kuda, dan lain-lain), atau set `art:` ke unit yang sudah ada.
-4. `i18n_game.js`: tambahkan nama di `addNames('unit.', { ... })` dengan format `'English|Indonesia|Español|Français|Deutsch|Português|日本語'`.
-
-**Teknologi baru**: entri di `T` (`at` bangunan, `age`, `cost`, `time`, `icon`, `req`, `fx`). Jenis efek `fx`:
-`stat` (ubah statistik, `add` atau `mul`), `gather`, `carry`, `line` (tingkatkan jalur unit), `cost`, `time`,
-`build`, `farm`, `pop`, `flag`, `convRes`, `commission`, `tribute`, `elite`. Tambahkan id-nya ke `B.<bangunan>.techs`
-dan namanya di `addNames('tech.', ...)`. Panel perintah menampilkan maksimal 10 tombol per bangunan.
-
-**Peradaban baru**: entri di `CIVS` (`uu` unit khusus, `arch` gaya bangunan, `music` tangga nada di `SCALES` dalam
-`audio.js`, `fx` bonus), unit khususnya di `U` (dengan `from: 'castle'` dan `elite`), teks `civ.<id>`, `civ.<id>.r`,
-`civ.<id>.d`, `uu.<unit>` di `i18n_game.js`, preferensi pasukan AI di `AI_PREF` (`ai.js`), dan nama pemimpin di
-`AI_NAMES` (`ui.js`).
-
-**Bahasa baru**: tambahkan kode bahasa di akhir `LANG_ORDER` (`i18n_ui.js`) dan di `LANGS` (`ui.js`), lalu tambahkan
-terjemahan sebagai kolom ke-8 di setiap entri `i18n_ui.js` dan `i18n_game.js`. Teks yang belum diterjemahkan
-otomatis memakai bahasa Inggris.
-
-**Peta baru**: tambahkan nama di `MAP_TYPES` (`map.js`), cabang pembuatan medan di `genMap()`, dan nama `map.<id>` di `i18n_ui.js`.
+localStorage keys: `eok.settings`, `eok.setup`, `eok.tutCollapsed`, `eok.save.<slot>` and `eok.meta.<slot>`
+(slots `auto`, `1`, `2`, `3`).
 
 ---
 
-## 8. Pengujian
+## 7. Adding content
 
-**Uji simulasi (tanpa browser, tanpa instalasi)** — menjalankan pertandingan AI vs AI dengan kode game asli,
-lalu mencetak perkembangan, waktu naik zaman, dan performa:
+**New unit**
+1. `data.js`: add an entry to `U`, for example
+   `elephantArcher: { cls: ['cavalry','archer'], hp: 200, atk: 7, at: 'p', a: [1, 3], rng: 5, rof: 2.5, spd: .8, los: 6, cost: { food: 120, gold: 80 }, time: 35, from: 'castle', age: 2, r: .4, proj: 'arrow', acc: .8, weak: ['spear','monk'] }`.
+   Key fields: `at` attack type (`'m'` melee, `'p'` pierce/projectile), `a` armor `[melee, pierce]`, `bonus`
+   attack bonus per class (for example `{ cavalry: 15 }`), `rng` range in tiles, `spd` tiles per second.
+2. Add it to the building that trains it: `B.<building>.trains`.
+3. `art_units.js`: add a drawing style to `UNIT_ART` (helmet, weapon, shield, horse and so on), or set `art:` to
+   reuse an existing unit's look.
+4. `i18n_game.js`: add the name to `addNames('unit.', { ... })` as
+   `'English|Indonesia|Español|Français|Deutsch|Português|日本語'`.
+
+**New technology:** an entry in `T` (`at` building, `age`, `cost`, `time`, `icon`, `req`, `fx`). Effect types for
+`fx`: `stat` (change a stat with `add` or `mul`), `gather`, `carry`, `line` (upgrade a unit line), `cost`, `time`,
+`build`, `farm`, `pop`, `flag`, `convRes`, `commission`, `tribute`, `elite`. Add its id to `B.<building>.techs` and
+its name to `addNames('tech.', ...)`. The command card shows at most 10 buttons per building.
+
+**New civilization:** an entry in `CIVS` (`uu` unique unit, `arch` building style, `music` scale from `SCALES` in
+`audio.js`, `fx` bonuses), its unique unit in `U` (with `from: 'castle'` and `elite`), the texts `civ.<id>`,
+`civ.<id>.r`, `civ.<id>.d` and `uu.<unit>` in `i18n_game.js`, AI army preferences in `AI_PREF` (`ai.js`) and a
+leader name in `AI_NAMES` (`ui.js`).
+
+**New language:** add the language code at the end of `LANG_ORDER` (`i18n_ui.js`) and to `LANGS` (`ui.js`), then add
+the translation as an 8th column to every entry in `i18n_ui.js` and `i18n_game.js`. Missing translations fall back
+to English.
+
+**New map type:** add the name to `MAP_TYPES` (`map.js`), a terrain branch in `genMap()`, and the name `map.<id>` in
+`i18n_ui.js`.
+
+---
+
+## 8. Testing
+
+**Simulation test (no browser, nothing to install).** Plays AI-vs-AI matches with the real game code and prints
+progress, age-up times and performance:
 
 ```bash
-node tools/sim-test.mjs                         # 30 menit, 2 pemain
-node tools/sim-test.mjs 40 rivers 96 7 majapahit,japanese,ottomans hard,hardest,normal
+node tools/sim-test.mjs                         # 30 minutes, 2 players
+node tools/sim-test.mjs 30 rivers 96 7 majapahit,japanese,ottomans hard,hardest,normal
 ```
 
-Jalankan setiap kali mengubah `data.js`, `sim.js`, atau `ai.js`. Pesan `OK: no errors.` berarti simulasi berjalan
-tanpa crash.
+Arguments: minutes, map type, map size in tiles, seed, civilizations, AI levels. Run it after every change to
+`data.js`, `sim.js`, `cmd.js`, `ai.js` or `map.js`. `OK: no errors.` at the end means the match ran without a crash.
 
-**Uji browser (opsional)** — membuka `index.html` di Chromium tanpa tampilan, memilih penduduk dengan drag,
-memberi perintah, memakai hotkey, mempercepat 15 menit, dan menguji simpan/muat:
+**Browser smoke test.** Opens `index.html` in headless Chromium and plays it with the real mouse and keyboard:
+selecting and ordering villagers, hotkeys, a 15-minute fast-forward, save and load, clicking a unit standing
+behind a building, the speed and pause buttons, quitting to the menu and continuing, and the tutorial panel.
+It fails on any failed check or page error. One-time setup, then run:
 
 ```bash
-npm init -y
-npm install --save-dev playwright
+npm install --no-save playwright@1.56.0
 npx playwright install chromium
 node build.mjs && node tools/browser-smoke.mjs
 ```
 
-Tangkapan layar tersimpan di `tools/screenshots/`.
+Screenshots are written to `tools/screenshots/` (ignored by git). `SMOKE_SEED=<text>` changes the map seed.
 
-**Uji otomatis di GitHub (CI).** Setelah proyek ada di GitHub, `.github/workflows/ci.yml` menjalankan build,
-tiga uji simulasi, dan uji browser pada setiap push ke `main` atau ke branch `claude/...`, setiap pull request,
-dan kapan saja lewat tombol **Run workflow** di tab Actions. Hasilnya terlihat di tab
-**Actions** dan sebagai tanda centang hijau/silang merah di pull request. Jangan menggabungkan pull request yang
-CI-nya merah.
-
----
-
-## 9. Kontrol
-
-| Tombol | Fungsi |
-|---|---|
-| Klik kiri / seret | Pilih unit / pilih banyak |
-| Klik kanan | Gerak, kumpulkan, serang, bangun, perbaiki (sesuai sasaran) |
-| Shift | Antrekan perintah, tambah ke pilihan, latih 5 unit sekaligus |
-| Klik dua kali / Ctrl+klik | Pilih semua unit sejenis di layar |
-| Ctrl+1…9, lalu 1…9 | Buat grup, panggil grup (tekan dua kali untuk melompat ke grup) |
-| Q W E R T / A S D F G / Z X C V B | Tombol panel perintah |
-| A | Serbu sambil bergerak (untuk pasukan) |
-| H | Pilih balai kota |
-| . (titik) | Penduduk menganggur berikutnya |
-| Spasi | Lompat ke lokasi serangan terakhir |
-| Del | Hapus pilihan |
-| P / F3 | Jeda |
-| + / − | Kecepatan permainan (tombol kecepatan di bilah atas: klik = naik, setelah 3× kembali ke 1×; klik kanan = turun) |
-| Panah / tepi layar / seret tombol tengah | Gulir peta |
-| Roda mouse | Zoom |
-| Alt + klik kanan | Masukkan unit ke dalam bangunan |
-| Esc / F10 | Batal / menu permainan |
-
-Layar sentuh: ketuk untuk memilih dan memberi perintah, geser satu jari untuk menggulir, cubit untuk zoom,
-tekan lama lalu geser untuk memilih area. Ketuk tombol perintah untuk melihat keterangannya (hilang sendiri
-setelah beberapa detik). Kotak tutorial bisa diciutkan lewat tombol **Sembunyikan** (di layar HP otomatis ciut,
-hanya menampilkan tujuan saat ini; ketuk untuk membuka).
+**Continuous integration.** `.github/workflows/ci.yml` runs the build check, three simulation tests and the browser
+smoke test on every push to `main` or a `claude/...` branch, on every pull request, and on demand with
+**Run workflow** in the **Actions** tab. Results appear in the Actions tab and as a green check or red cross on
+pull requests. Do not merge a pull request whose CI is red.
 
 ---
 
-## 10. Batasan versi 1.0 & ide pengembangan
+## 9. Contributing and working with AI agents
 
-- Belum ada multiplayer online (butuh server WebSocket untuk sinkronisasi perintah; simulasi sudah berbasis langkah tetap dan perintah, sehingga cocok untuk model *lockstep*).
-- Belum ada kampanye bercerita (misalnya Gajah Mada dan Sumpah Palapa).
-- Grafis digambar dengan kode, bukan sprite artis; bisa diganti dengan sprite sheet PNG di `art_*.js`.
-- Belum ada unit pengangkut laut (kapal transport) dan perdagangan antarpasar.
-- Simpanan hanya di browser lokal; ekspor/impor file simpanan bisa ditambahkan.
-- Belum bisa dipasang sebagai aplikasi (PWA) atau dibungkus menjadi aplikasi desktop/Android (Electron, Tauri, Capacitor).
+Changes reach `main` only through pull requests:
 
-Seluruh kode, grafis, dan musik dibuat khusus untuk proyek ini. Satu-satunya sumber luar adalah dua font Google Fonts
-(Marcellus SC dan Alegreya Sans, lisensi SIL Open Font License) yang dimuat dari internet saat tersedia.
+1. **Describe the work** in an issue. The templates ask for the goal, the expected behaviour and when it counts
+   as done (**Issues → New issue → Feature / change** or **Bug report**).
+2. **Make the change on a branch**: `feature/...` or `fix/...` for people, `claude/...` for Claude sessions,
+   which cannot push to `main`. Keep one focused change per branch.
+3. **Open a pull request.** Its template asks what changed, how it was tested and for screenshots of visual changes.
+4. **Wait for CI to pass**, review the change (and try it in the browser for gameplay or UI changes), then merge.
+   GitHub Pages updates a minute or two later.
+
+AI coding agents (Claude Code and others) read [`AGENTS.md`](AGENTS.md): the project's rules (edit `src/`, rebuild
+`index.html`, no dependencies, every visible string in 7 languages, keep saves loadable), the commands to run and
+the definition of done for a pull request. A good request to an agent names the goal, the expected behaviour and
+any limits, just like a well-written issue; you can also point the agent at an issue directly.
+
+---
+
+## 10. Known limitations and ideas
+
+- No online multiplayer yet. The simulation is already command-driven and fixed-step, which suits a lockstep
+  model over WebSocket.
+- No story campaign yet (for example Gajah Mada and the Palapa Oath).
+- Graphics are drawn in code rather than by an artist; `art_*.js` could switch to PNG sprite sheets.
+- No transport ships or amphibious attacks, and no trade carts between markets.
+- Saves stay in the local browser; export/import of save files would allow moving between devices.
+- Not yet installable as an app (PWA) or packaged for desktop/Android (Electron, Tauri, Capacitor).
+
+All code, graphics and music were made for this project. The only outside resources are two Google Fonts
+(Marcellus SC and Alegreya Sans, SIL Open Font License), loaded from the internet when available.

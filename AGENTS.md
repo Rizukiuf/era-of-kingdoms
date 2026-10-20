@@ -1,7 +1,7 @@
 # AGENTS.md — instructions for AI coding agents
 
-> Bahasa Indonesia: berkas ini adalah panduan kerja untuk AI agent (Claude Code, dan agent lain yang membaca
-> AGENTS.md). Panduan untuk manusia ada di README.md.
+> Working instructions for AI coding agents (Claude Code and other agents that read AGENTS.md).
+> The guide for people is README.md.
 
 Era of Kingdoms is a real-time strategy game in the style of Age of Empires, written in plain JavaScript.
 It runs entirely in the browser: no framework, no npm dependencies, no server. Graphics are drawn with Canvas 2D
@@ -35,7 +35,7 @@ and audio is synthesized with the Web Audio API. `build.py` / `build.mjs` concat
 |---|---|
 | Build `index.html` | `node build.mjs` or `python3 build.py` |
 | Headless simulation test (run before every commit that touches `data`, `sim`, `cmd`, `ai` or `map`) | `node tools/sim-test.mjs 30` and `node tools/sim-test.mjs 30 rivers 96 7 majapahit,japanese,ottomans hard,hardest,normal` — both must end with `OK: no errors.` |
-| Browser smoke test (needs Playwright: `npm install --no-save playwright && npx playwright install chromium`) | `node tools/browser-smoke.mjs` |
+| Browser smoke test (one-time setup: `npm install --no-save playwright@1.56.0 && npx playwright install chromium`) | `node tools/browser-smoke.mjs` — must end with `OK: all … checks passed` |
 | Play | open `index.html` in a browser |
 
 There is no linter or formatter. Match the surrounding style: 2-space indent, single quotes, semicolons,
@@ -64,7 +64,8 @@ compact functions.
 
 - Balance: numbers in `data.js`; AI behaviour constants at the top of `ai.js`. Verify with the sim test
   (age-up times and kills are printed at the end).
-- New unit, technology, civilization, language or map: follow README section 7.
+- New unit, technology, civilization, language or map: follow README section 7 (Adding content).
+- Documentation, comments, commit messages and PR descriptions are written in English. Player-visible text is translated (rule 3).
 - Visual change: `art_units.js` / `art_bld.js`. Sprites are cached by key; include every parameter that changes
   the drawing in the cache key.
 - HUD or menu change: `ui.js` plus CSS in `shell.html`. Check the 760 px mobile breakpoint.
@@ -75,7 +76,7 @@ compact functions.
 - `node build.mjs` run and `index.html` committed.
 - Sim tests pass; for UI changes, the browser smoke test passes or you describe how you tested in a browser.
 - New text translated in all 7 languages (or flagged in the PR).
-- README / AGENTS.md updated when commands, structure or behaviour change.
+- README / AGENTS.md updated when commands, structure, controls or behaviour change.
 - PR description: what changed, why, how it was tested, screenshots for visual changes, open questions.
 
 ## Known gaps (candidate tasks)
