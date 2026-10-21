@@ -51,6 +51,9 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
   slot → load, message when a load fails); 19 checks in total.
 - Browser smoke test: 2 new checks for the display settings (Large interface size with minimap clicks and tooltips
   that still line up, color-blind mode that redraws the sprites, and switching both back); 21 checks in total.
+- Browser smoke test: the farm check no longer fails in about one run out of ten. The test pauses the game at a
+  moment that depends on timing, and now and then a villager walking across the new field stood on the point it
+  clicked; it now clicks a point of the farm that nothing covers.
 
 ## [1.0.0] — 2026-10-21
 
