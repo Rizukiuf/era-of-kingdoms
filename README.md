@@ -384,11 +384,19 @@ any limits, just like a well-written issue; you can also point the agent at an i
 
 ## 10. Known limitations and ideas
 
-- No online multiplayer yet. The simulation is already command-driven and fixed-step, which suits a lockstep
-  model over WebSocket.
-- No story campaign yet (for example Gajah Mada and the Palapa Oath).
-- Graphics are drawn in code rather than by an artist; `art_*.js` could switch to PNG sprite sheets.
-- No transport ships or amphibious attacks, and no trade carts between markets.
+Planned work and open bugs are listed in priority order in the
+[Roadmap issue](https://github.com/Rizukiuf/era-of-kingdoms/issues/17); each item has its own issue. Numbers such as
+#23 below are issue numbers on https://github.com/Rizukiuf/era-of-kingdoms/issues.
+
+- Computer players stay in the Castle Age for a long time and hardly train their unique unit (#23), and they use
+  monks only to collect relics (#25).
+- On phones 760 px wide or less held in landscape, the map gets very little room (#24).
+- No online multiplayer yet (#16): planned as lockstep between 2–4 players, peer to peer. The simulation is already
+  command-driven and fixed-step, which suits that model.
+- No story campaign yet (#15, Gajah Mada and the Palapa Oath), which needs the scenario system (#14) first.
+- No transport ships or amphibious attacks (#12), and no trade carts between markets (#11).
+- Graphics are drawn in code rather than by an artist; the project ships no image files except the app icons the
+  build draws.
 - Not packaged for app stores (Electron, Tauri, Capacitor); installing from the browser covers desktop and phones.
 
 All code, graphics and music were made for this project. The only outside resources are two Google Fonts

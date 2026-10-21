@@ -12,8 +12,10 @@ and write the few small files that make the game an installable app with offline
 
 - Version 1.0.0, released on 2026-10-21 (tag `v1.0.0` and a GitHub release). Playable at
   https://rizukiuf.github.io/era-of-kingdoms/ (GitHub Pages serves `index.html` and the app files on `main`).
+- `main` already has changes made after 1.0.0 (CHANGELOG `[Unreleased]`), and GitHub Pages serves them.
 - What has been done and fixed so far: `CHANGELOG.md`. Add an entry there for every user-visible change.
-- What could come next: "Known gaps" at the end of this file and README section 10.
+- What comes next: the Roadmap issue (#17) lists planned work and open bugs in priority order, each with its
+  own issue. See also "Known gaps" at the end of this file and README section 10.
 - The maintainer (Rizki) plays the game, reports bugs, reviews and merges pull requests. He prefers replies in
   Bahasa Indonesia; everything committed to the repository is in English.
 - Bug fixes in this project have each come with a regression check in `tools/browser-smoke.mjs` that fails on
@@ -110,6 +112,12 @@ compact functions.
 
 ## Known gaps (candidate tasks)
 
-Transport ships and amphibious attacks · trade carts between markets ·
-story campaign (Gajah Mada / Sumpah Palapa) · balance report across
-civilizations · online multiplayer (lockstep over WebSocket; the simulation is already command-driven and fixed-step).
+Each has an issue, ordered in the Roadmap (#17):
+
+- Bugs found by measurement: computer players stall in the Castle Age and hardly train unique units (#23); phones
+  760 px wide or less in landscape leave almost no room for the map (#24).
+- Computer players: monks that convert and heal (#25).
+- Gameplay: replays (#10), trade carts and cogs (#11), transport ships and amphibious attacks (#12), Sriwijaya and
+  Khmer (#13).
+- Larger work: scenario system (#14), Gajah Mada campaign (#15), online multiplayer (#16; lockstep, peer-to-peer;
+  the simulation is already command-driven and fixed-step).
