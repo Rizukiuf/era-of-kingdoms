@@ -7,6 +7,17 @@ Era of Kingdoms is a real-time strategy game in the style of Age of Empires, wri
 It runs entirely in the browser: no framework, no npm dependencies, no server. Graphics are drawn with Canvas 2D
 and audio is synthesized with the Web Audio API. `build.py` / `build.mjs` concatenate `src/` into one `index.html`.
 
+## Project status
+
+- Version 1.0.0, playable at https://rizukiuf.github.io/era-of-kingdoms/ (GitHub Pages serves `index.html` on `main`).
+  The `v1.0.0` tag and release are not created yet.
+- What has been done and fixed so far: `CHANGELOG.md`. Add an entry there for every user-visible change.
+- What could come next: "Known gaps" at the end of this file and README section 10.
+- The maintainer (Rizki) plays the game, reports bugs, reviews and merges pull requests. He prefers replies in
+  Bahasa Indonesia; everything committed to the repository is in English.
+- Bug fixes in this project have each come with a regression check in `tools/browser-smoke.mjs` that fails on
+  the old code. Keep doing that for UI and input bugs.
+
 ## Golden rules
 
 1. **Edit `src/`, never `index.html` by hand.** `index.html` is generated. After changing anything in `src/`, run
@@ -72,7 +83,10 @@ compact functions.
 
 ## Definition of done for a pull request
 
-- One focused change per PR, on its own branch. Claude sessions push to `claude/...` branches (they cannot push to `main`); humans can use `feature/...` or `fix/...`. Changes reach `main` only through a reviewed pull request.
+- One focused change per PR, on its own branch: `fix/...` or `feature/...` (cloud Claude sessions can only push
+  `claude/...` branches). Never push to `main` directly, even with credentials that allow it: changes reach `main`
+  only through a pull request that passes CI and that the maintainer merges.
+- `CHANGELOG.md` has an entry for every user-visible change.
 - `node build.mjs` run and `index.html` committed.
 - Sim tests pass; for UI changes, the browser smoke test passes or you describe how you tested in a browser.
 - New text translated in all 7 languages (or flagged in the PR).
