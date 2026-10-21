@@ -252,6 +252,35 @@ function importSave(d, slot, date) {
 }
 
 // ------------------------------------------------------------
+// Installable app and offline play
+// ------------------------------------------------------------
+// Only over http(s): a page opened from file:// gets no manifest (fetching it there is a CORS error) and no
+// service worker. sw.js keeps a downloaded update waiting; it replaces the running version only on the next
+// launch or when the player presses the main-menu button, so a game in progress is never reloaded.
+let swReg = null, swReload = false;
+function initPwa() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const link = document.createElement('link');
+    link.rel = 'manifest'; link.href = 'manifest.webmanifest';
+    document.head.appendChild(link);
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (swReload) location.reload(); });
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      swReg = reg;
+      const watch = w => { if (w) w.addEventListener('statechange', () => UI.updateNotice()); };
+      watch(reg.installing);
+      reg.addEventListener('updatefound', () => watch(reg.installing));
+      UI.updateNotice();
+    }).catch(() => { });
+    // an installed app asks the browser not to evict its storage, where the saves live
+    if (matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) navigator.storage?.persist?.().catch(() => { });
+  } catch (e) { }
+}
+function updateReady() { return !!(swReg && swReg.waiting && navigator.serviceWorker.controller); }
+function applyUpdate() { if (updateReady()) { swReload = true; swReg.waiting.postMessage('skipWaiting'); } }
+
+// ------------------------------------------------------------
 // Main loop
 // ------------------------------------------------------------
 let lastT = performance.now(), acc = 0, miniT = 0;
@@ -302,6 +331,7 @@ function boot(hot) {
       }
     } catch (e) { console.error(e); startAttract(); hideLoading(); UI.showMenu(); }
     requestAnimationFrame(loop);
+    initPwa();
   }, 30);
 }
 try { window.claude?.hot?.snapshot?.(() => ({ save: G && !G.cfg.attract && UI.screen === 'game' ? serializeGame() : null })); } catch (e) { }

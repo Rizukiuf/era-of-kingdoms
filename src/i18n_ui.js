@@ -44,6 +44,7 @@ addL({
   'menu.civs': ['Civilizations', 'Peradaban', 'Civilizaciones', 'Civilisations', 'Zivilisationen', 'Civilizações', '文明'],
   'menu.howto': ['How to Play', 'Cara Bermain', 'Cómo jugar', 'Comment jouer', 'Spielanleitung', 'Como jogar', '遊び方'],
   'menu.settings': ['Settings', 'Pengaturan', 'Ajustes', 'Paramètres', 'Einstellungen', 'Configurações', '設定'],
+  'menu.update': ['New version available — restart to update', 'Versi baru tersedia — mulai ulang untuk memperbarui', 'Nueva versión disponible: reinicia para actualizar', 'Nouvelle version disponible — redémarrer pour mettre à jour', 'Neue Version verfügbar – zum Aktualisieren neu starten', 'Nova versão disponível — reinicie para atualizar', '新しいバージョンがあります — 再起動して更新'],
 
   'setup.title': ['Skirmish Setup', 'Pengaturan Pertempuran', 'Configurar escaramuza', 'Configuration', 'Gefecht einrichten', 'Configurar escaramuça', 'スカーミッシュ設定'],
   'setup.players': ['Players', 'Pemain', 'Jugadores', 'Joueurs', 'Spieler', 'Jogadores', 'プレイヤー'],

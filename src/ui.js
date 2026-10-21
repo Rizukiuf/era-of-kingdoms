@@ -129,7 +129,8 @@ const UI = {
       </nav>
       <div><div class="eyebrow" style="margin-bottom:8px">${t('set.language')}</div><div class="langs">${LANGS.map(([k, n]) => `<button class="chip ${Settings.lang === k ? 'on' : ''}" data-lang="${k}">${n}</button>`).join('')}</div></div>
       <div class="foot">${t('ui.foot')}<br>v${GAME_VERSION}</div>
-    </div>`;
+    </div>
+    <button class="btn small update" id="btnUpdate" data-a="update" ${updateReady() ? '' : 'hidden'}>${t('menu.update')}</button>`;
     $('menu').onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       Audio2.ensure(); Audio2.sfx('click');
@@ -142,8 +143,11 @@ const UI = {
       else if (a === 'howto') this.showHowTo();
       else if (a === 'settings') this.showSettings(false);
       else if (a === 'continue') loadGame('auto');
+      else if (a === 'update') applyUpdate();
     };
   },
+  // shows the "new version" button once a downloaded update waits (it is part of the main menu only)
+  updateNotice() { const b = $('btnUpdate'); if (b) b.hidden = !updateReady(); },
   modal(html, onClick, cls) {
     const m = $('modal');
     m.hidden = false;

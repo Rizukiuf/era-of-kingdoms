@@ -6,6 +6,12 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 ## [Unreleased]
 
 ### Added
+- **Install as an app and play offline** (issue #7). On the website, Chrome and Edge offer **Install** and Safari
+  on iPhone/iPad can **Add to Home Screen**; the app opens full screen in landscape with its own icon. After the
+  first visit the game starts without an internet connection, installed or in a browser tab (fonts fall back to
+  the system fonts offline). A new version downloads in the background and never interrupts a running game: it
+  starts with the next launch, or with the **New version available — restart to update** button in the main menu.
+  Saves are kept. `index.html` opened from a file works exactly as before.
 - **Export and import save files** (#18, issue #6). In the Save/Load window every slot that holds a save, the
   autosave included, has an **Export** button that downloads `era-of-kingdoms-<slot>-<yyyy-mm-dd-hhmm>.json`.
   **Import file** reads such a file into slot 1, 2 or 3 (an occupied slot asks for a second click), so a game can
@@ -19,6 +25,10 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 - The "Game saved." confirmation stays visible after saving into a slot (the window redrew over it).
 
 ### Project and tooling
+- The build also writes `sw.js`, `manifest.webmanifest`, `icon.svg` and `icon-180/192/512.png` from `src/sw.js`,
+  `src/manifest.webmanifest` and `src/icon.svg`; it draws the PNG icons itself, byte-identical from `build.mjs`
+  and `build.py`. Both builds read sources with `\n` line endings, so a Windows checkout builds the same files.
+  CI checks all built files and runs the new `tools/pwa-check.mjs` (install, offline and update test, 9 checks).
 - Browser smoke test: 4 new checks (export download, broken files refused, export → delete → import into another
   slot → load, message when a load fails); 19 checks in total.
 

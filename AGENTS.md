@@ -5,11 +5,12 @@
 
 Era of Kingdoms is a real-time strategy game in the style of Age of Empires, written in plain JavaScript.
 It runs entirely in the browser: no framework, no npm dependencies, no server. Graphics are drawn with Canvas 2D
-and audio is synthesized with the Web Audio API. `build.py` / `build.mjs` concatenate `src/` into one `index.html`.
+and audio is synthesized with the Web Audio API. `build.py` / `build.mjs` concatenate `src/` into one `index.html`
+and write the few small files that make the game an installable app with offline play (`sw.js`, manifest, icons).
 
 ## Project status
 
-- Version 1.0.0, playable at https://rizukiuf.github.io/era-of-kingdoms/ (GitHub Pages serves `index.html` on `main`).
+- Version 1.0.0, playable at https://rizukiuf.github.io/era-of-kingdoms/ (GitHub Pages serves `index.html` and the app files on `main`).
   The `v1.0.0` tag and release are not created yet.
 - What has been done and fixed so far: `CHANGELOG.md`. Add an entry there for every user-visible change.
 - What could come next: "Known gaps" at the end of this file and README section 10.
@@ -20,11 +21,14 @@ and audio is synthesized with the Web Audio API. `build.py` / `build.mjs` concat
 
 ## Golden rules
 
-1. **Edit `src/`, never `index.html` by hand.** `index.html` is generated. After changing anything in `src/`, run
-   `node build.mjs` (or `python3 build.py`) and commit the regenerated `index.html` in the same commit.
-   GitHub Pages serves `index.html`, and CI fails when it is out of date.
-2. **No external dependencies.** No libraries, CDNs, image files or network calls. The only external resource is
-   Google Fonts, which must keep working offline through the CSS fallback stacks.
+1. **Edit `src/`, never the built files by hand.** The build generates `index.html`, `sw.js`,
+   `manifest.webmanifest`, `icon.svg`, `icon-180.png`, `icon-192.png` and `icon-512.png` at the repository root.
+   After changing anything in `src/`, run `node build.mjs` (or `python3 build.py`) and commit all regenerated files
+   in the same commit. GitHub Pages serves them, and CI fails when one is out of date or the two builds differ.
+2. **No external dependencies.** No libraries, CDNs or network calls, and no image files except the app icons the
+   build draws from `src/icon.svg` (maintainer decision on issue #7). The only external resource is Google Fonts,
+   which must keep working offline through the CSS fallback stacks. `index.html` alone stays a complete game that
+   works from `file://`; the other built files only add install and offline play when it is served over http(s).
 3. **Every player-visible string goes through `t('key')`.** Add the text in all 7 languages, in this order:
    en, id, es, fr, de, pt, ja (`i18n_ui.js` for interface text, `i18n_game.js` for game content). If you cannot
    translate reliably, use English for that language and say so in the PR description.
@@ -44,9 +48,10 @@ and audio is synthesized with the Web Audio API. `build.py` / `build.mjs` concat
 
 | Task | Command |
 |---|---|
-| Build `index.html` | `node build.mjs` or `python3 build.py` |
+| Build `index.html` and the app files | `node build.mjs` or `python3 build.py` |
 | Headless simulation test (run before every commit that touches `data`, `sim`, `cmd`, `ai` or `map`) | `node tools/sim-test.mjs 30` and `node tools/sim-test.mjs 30 rivers 96 7 majapahit,japanese,ottomans hard,hardest,normal` — both must end with `OK: no errors.` |
 | Browser smoke test (one-time setup: `npm install --no-save playwright@1.56.0 && npx playwright install chromium`) | `node tools/browser-smoke.mjs` — must end with `OK: all … checks passed` |
+| Install and offline check (same setup; run after changes to `sw.js`, the manifest, icons, `initPwa()` or the build) | `node tools/pwa-check.mjs` — must end with `OK: all … checks passed` |
 | Play | open `index.html` in a browser |
 
 There is no linter or formatter. Match the surrounding style: 2-space indent, single quotes, semicolons,
@@ -68,8 +73,11 @@ compact functions.
 | `src/i18n_ui.js` / `src/i18n_game.js` | `t()`, `setLang()`, translation tables. |
 | `src/ui.js` | `UI`: menus, skirmish setup, HUD, 5×3 command card with hotkeys, tooltips, mouse/keyboard/touch input, tech tree, scores, end screen, tutorial objectives (`TUT`). |
 | `src/audio.js` | `Audio2`: synthesized sound effects and generative music per civilization scale. |
-| `src/main.js` | Lifecycle, fixed-step main loop, save/load, attract-mode battle behind the main menu. |
+| `src/main.js` | Lifecycle, fixed-step main loop, save/load, attract-mode battle behind the main menu, service worker registration and update (`initPwa()`, `applyUpdate()`). |
 | `src/shell.html` | Markup and CSS for menus and HUD. |
+| `src/sw.js` | Service worker: caches the built files for offline play; a new version waits until the next launch or the main-menu update button. The build puts a hash of all built files into its cache name. |
+| `src/manifest.webmanifest` | Web app manifest (name, full screen, landscape, colours, icons), copied as is. |
+| `src/icon.svg` | App icon, copied as is and drawn into `icon-*.png` by the build. Only `<rect>`, `<circle>` and `<polygon>` with a solid fill, so both builds draw identical PNGs. |
 
 ## Where common changes go
 
@@ -87,7 +95,7 @@ compact functions.
   `claude/...` branches). Never push to `main` directly, even with credentials that allow it: changes reach `main`
   only through a pull request that passes CI and that the maintainer merges.
 - `CHANGELOG.md` has an entry for every user-visible change.
-- `node build.mjs` run and `index.html` committed.
+- `node build.mjs` run and `index.html` (and any other built file that changed) committed.
 - Sim tests pass; for UI changes, the browser smoke test passes or you describe how you tested in a browser.
 - New text translated in all 7 languages (or flagged in the PR).
 - README / AGENTS.md updated when commands, structure, controls or behaviour change.
@@ -96,5 +104,5 @@ compact functions.
 ## Known gaps (candidate tasks)
 
 Transport ships and amphibious attacks · trade carts between markets ·
-installable PWA for offline play · story campaign (Gajah Mada / Sumpah Palapa) · balance report across
+story campaign (Gajah Mada / Sumpah Palapa) · balance report across
 civilizations · online multiplayer (lockstep over WebSocket; the simulation is already command-driven and fixed-step).
