@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<!-- Era of Kingdoms app icon. The build copies this file to icon.svg and draws icon-*.png from it, so it may use
+     only <rect>, <circle> and <polygon> with a solid fill="#rrggbb", painted in order. Keep the drawing inside
+     the circle of radius 204 around the centre: that is the safe zone of a maskable icon. -->
+<title>Era of Kingdoms</title>
+<rect width="512" height="512" fill="#0b0f1c"/>
+<circle cx="256" cy="256" r="200" fill="#c39a5c"/>
+<circle cx="256" cy="256" r="186" fill="#1d2642"/>
+<polygon points="254,92 258,92 258,140 254,140" fill="#ead09a"/>
+<polygon points="258,92 294,104 258,116" fill="#ead09a"/>
+<polygon points="144,368 144,184 160,184 160,204 168,204 168,184 184,184 184,204 192,204 192,184 208,184 208,140 223,140 223,164 235,164 235,140 250,140 250,164 262,164 262,140 277,140 277,164 289,164 289,140 304,140 304,184 320,184 320,204 328,204 328,184 344,184 344,204 352,204 352,184 368,184 368,368" fill="#c39a5c"/>
+<polygon points="304,184 320,184 320,204 328,204 328,184 344,184 344,204 352,204 352,184 368,184 368,368 304,368" fill="#a5804a"/>
+<polygon points="232,368 232,300 234,288 238,276 246,266 256,258 266,266 274,276 278,288 280,300 280,368" fill="#1d2642"/>
+<rect x="172" y="232" width="8" height="32" fill="#1d2642"/>
+<rect x="332" y="232" width="8" height="32" fill="#1d2642"/>
+<circle cx="256" cy="204" r="11" fill="#1d2642"/>
+<rect x="128" y="368" width="256" height="14" fill="#8a5a3b"/>
+</svg>

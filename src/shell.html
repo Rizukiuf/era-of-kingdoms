@@ -71,6 +71,8 @@ label.field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min
 .chip { appearance: none; border: 1px solid var(--line); background: rgba(15, 21, 40, .75); color: var(--muted); padding: 4px 10px; border-radius: 999px; cursor: pointer; font-size: 13px; }
 .chip.on { color: #1a1208; background: var(--bronze); border-color: var(--bronze-hi); }
 .foot { font-size: 12px; color: var(--dim); line-height: 1.5; }
+/* corner of the menu screen, so it stays visible on short phone screens where the menu column is cut off */
+#menu .update { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); max-width: calc(100% - 32px); border-color: var(--bronze); box-shadow: var(--shadow); }
 
 .overlay { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(5, 7, 13, .62); padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
 .sheet { width: min(1040px, 100%); max-height: 100%; display: flex; flex-direction: column; border-radius: 4px; overflow: hidden; }

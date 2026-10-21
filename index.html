@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0f1c">
 <meta name="description" content="Era of Kingdoms: real-time medieval strategy game in the browser. 8 civilizations, 4 ages, AI opponents, 7 languages.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kingdoms">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>html,body{height:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Era of Kingdoms</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -79,6 +85,8 @@ label.field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min
 .chip { appearance: none; border: 1px solid var(--line); background: rgba(15, 21, 40, .75); color: var(--muted); padding: 4px 10px; border-radius: 999px; cursor: pointer; font-size: 13px; }
 .chip.on { color: #1a1208; background: var(--bronze); border-color: var(--bronze-hi); }
 .foot { font-size: 12px; color: var(--dim); line-height: 1.5; }
+/* corner of the menu screen, so it stays visible on short phone screens where the menu column is cut off */
+#menu .update { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); max-width: calc(100% - 32px); border-color: var(--bronze); box-shadow: var(--shadow); }
 
 .overlay { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(5, 7, 13, .62); padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
 .sheet { width: min(1040px, 100%); max-height: 100%; display: flex; flex-direction: column; border-radius: 4px; overflow: hidden; }
@@ -885,6 +893,7 @@ addL({
   'menu.civs': ['Civilizations', 'Peradaban', 'Civilizaciones', 'Civilisations', 'Zivilisationen', 'Civilizações', '文明'],
   'menu.howto': ['How to Play', 'Cara Bermain', 'Cómo jugar', 'Comment jouer', 'Spielanleitung', 'Como jogar', '遊び方'],
   'menu.settings': ['Settings', 'Pengaturan', 'Ajustes', 'Paramètres', 'Einstellungen', 'Configurações', '設定'],
+  'menu.update': ['New version available — restart to update', 'Versi baru tersedia — mulai ulang untuk memperbarui', 'Nueva versión disponible: reinicia para actualizar', 'Nouvelle version disponible — redémarrer pour mettre à jour', 'Neue Version verfügbar – zum Aktualisieren neu starten', 'Nova versão disponível — reinicie para atualizar', '新しいバージョンがあります — 再起動して更新'],
 
   'setup.title': ['Skirmish Setup', 'Pengaturan Pertempuran', 'Configurar escaramuza', 'Configuration', 'Gefecht einrichten', 'Configurar escaramuça', 'スカーミッシュ設定'],
   'setup.players': ['Players', 'Pemain', 'Jugadores', 'Joueurs', 'Spieler', 'Jogadores', 'プレイヤー'],
@@ -5987,7 +5996,8 @@ const UI = {
       </nav>
       <div><div class="eyebrow" style="margin-bottom:8px">${t('set.language')}</div><div class="langs">${LANGS.map(([k, n]) => `<button class="chip ${Settings.lang === k ? 'on' : ''}" data-lang="${k}">${n}</button>`).join('')}</div></div>
       <div class="foot">${t('ui.foot')}<br>v${GAME_VERSION}</div>
-    </div>`;
+    </div>
+    <button class="btn small update" id="btnUpdate" data-a="update" ${updateReady() ? '' : 'hidden'}>${t('menu.update')}</button>`;
     $('menu').onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       Audio2.ensure(); Audio2.sfx('click');
@@ -6000,8 +6010,11 @@ const UI = {
       else if (a === 'howto') this.showHowTo();
       else if (a === 'settings') this.showSettings(false);
       else if (a === 'continue') loadGame('auto');
+      else if (a === 'update') applyUpdate();
     };
   },
+  // shows the "new version" button once a downloaded update waits (it is part of the main menu only)
+  updateNotice() { const b = $('btnUpdate'); if (b) b.hidden = !updateReady(); },
   modal(html, onClick, cls) {
     const m = $('modal');
     m.hidden = false;
@@ -7627,6 +7640,35 @@ function importSave(d, slot, date) {
 }
 
 // ------------------------------------------------------------
+// Installable app and offline play
+// ------------------------------------------------------------
+// Only over http(s): a page opened from file:// gets no manifest (fetching it there is a CORS error) and no
+// service worker. sw.js keeps a downloaded update waiting; it replaces the running version only on the next
+// launch or when the player presses the main-menu button, so a game in progress is never reloaded.
+let swReg = null, swReload = false;
+function initPwa() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const link = document.createElement('link');
+    link.rel = 'manifest'; link.href = 'manifest.webmanifest';
+    document.head.appendChild(link);
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (swReload) location.reload(); });
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      swReg = reg;
+      const watch = w => { if (w) w.addEventListener('statechange', () => UI.updateNotice()); };
+      watch(reg.installing);
+      reg.addEventListener('updatefound', () => watch(reg.installing));
+      UI.updateNotice();
+    }).catch(() => { });
+    // an installed app asks the browser not to evict its storage, where the saves live
+    if (matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) navigator.storage?.persist?.().catch(() => { });
+  } catch (e) { }
+}
+function updateReady() { return !!(swReg && swReg.waiting && navigator.serviceWorker.controller); }
+function applyUpdate() { if (updateReady()) { swReload = true; swReg.waiting.postMessage('skipWaiting'); } }
+
+// ------------------------------------------------------------
 // Main loop
 // ------------------------------------------------------------
 let lastT = performance.now(), acc = 0, miniT = 0;
@@ -7677,6 +7719,7 @@ function boot(hot) {
       }
     } catch (e) { console.error(e); startAttract(); hideLoading(); UI.showMenu(); }
     requestAnimationFrame(loop);
+    initPwa();
   }, 30);
 }
 try { window.claude?.hot?.snapshot?.(() => ({ save: G && !G.cfg.attract && UI.screen === 'game' ? serializeGame() : null })); } catch (e) { }
