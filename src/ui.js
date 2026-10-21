@@ -283,23 +283,49 @@ const UI = {
     if (this.screen === 'menu') this.showMenu();
     if (this.screen === 'game') { this.buildTopbar(); this.lastSig = ''; this.selSig = ''; this.updateObjectives(true); }
   },
-  showLoad(inGame) {
+  // note: text for the line under the slots; imp: { save, name } of a checked file waiting for a target slot
+  showLoad(inGame, note, imp) {
     const slots = ['auto', '1', '2', '3'];
+    const info = m => [civName(m.civ), t('map.' + m.map), ageName(m.age), fmtTime(m.time)].concat(m.date ? [new Date(m.date).toLocaleString(Settings.lang)] : []).join(' · ');
+    const acts = (s, m) => imp ? (s !== 'auto' ? `<button class="btn small primary" data-a="importTo" data-s="${s}">${t('pm.importHere')}</button>` : '')
+      : `${inGame && s !== 'auto' ? `<button class="btn small" data-a="save" data-s="${s}">${t('pm.save')}</button>` : ''}${m ? `<button class="btn small primary" data-a="load" data-s="${s}">${t('pm.load')}</button><button class="btn small" data-a="export" data-s="${s}">${t('pm.export')}</button><button class="btn small ghost" data-a="del" data-s="${s}" aria-label="${t('pm.delete')}">×</button>` : ''}`;
     const row = s => {
       const m = store('eok.meta.' + s);
-      return `<div class="slot"><div><b>${s === 'auto' ? t('pm.auto') : t('pm.slot', { n: s })}</b><div class="muted small">${m ? `${esc(civName(m.civ))} · ${t('map.' + m.map)} · ${ageName(m.age)} · ${fmtTime(m.time)} · ${new Date(m.date).toLocaleString(Settings.lang)}` : t('pm.empty')}</div></div>
-      <div class="acts">${inGame && s !== 'auto' ? `<button class="btn small" data-a="save" data-s="${s}">${t('pm.save')}</button>` : ''}${m ? `<button class="btn small primary" data-a="load" data-s="${s}">${t('pm.load')}</button><button class="btn small ghost" data-a="del" data-s="${s}" aria-label="${t('pm.delete')}">×</button>` : ''}</div></div>`;
+      return `<div class="slot"><div><b>${s === 'auto' ? t('pm.auto') : t('pm.slot', { n: s })}</b><div class="muted small">${m ? esc(info(m)) : t('pm.empty')}</div></div>
+      <div class="acts">${acts(s, m)}</div></div>`;
     };
-    this.modal(`${this.head(inGame ? t('pm.saveload') : t('menu.load'))}<div class="sheet-body"><div class="slots">${slots.map(row).join('')}</div><p class="muted small" id="loadNote"></p></div>`, (e, el) => {
+    const file = imp ? `<div class="slot import"><div><b>${esc(imp.name)}</b><div class="muted small">${esc(info(Object.assign(saveMeta(imp.save), { date: 0 })))}</div></div></div>` : '';
+    const foot = imp ? `<button class="btn ghost" data-a="importCancel">${t('setup.back')}</button>`
+      : `<button class="btn" data-a="import">${t('pm.import')}</button><input type="file" accept=".json,application/json" data-a="importFile" hidden>`;
+    this.modal(`${this.head(inGame ? t('pm.saveload') : t('menu.load'))}<div class="sheet-body">${file}<div class="slots">${slots.map(row).join('')}</div><p class="muted small" id="loadNote" aria-live="polite"></p></div><div class="sheet-foot">${foot}</div>`, (e, el) => {
       if (!el || !el.dataset.a) return;
-      const s = el.dataset.s;
-      if (el.dataset.a === 'save') { const ok = saveGame(s); $('loadNote').textContent = ok ? t('pm.saved') : t('pm.saveFail'); if (ok) this.showLoad(inGame); }
-      else if (el.dataset.a === 'load') { this.closeModal(); loadGame(s); }
-      else if (el.dataset.a === 'del') {
+      const s = el.dataset.s, a = el.dataset.a;
+      if (a === 'save') { if (saveGame(s)) this.showLoad(inGame, t('pm.saved')); else $('loadNote').textContent = t('pm.saveFail'); }
+      else if (a === 'load') { this.closeModal(); loadGame(s); }
+      else if (a === 'export') { if (!exportSave(s)) $('loadNote').textContent = t('pm.exportFail'); }
+      else if (a === 'del') {
         if (el.dataset.c) { storeDel('eok.save.' + s); storeDel('eok.meta.' + s); this.showLoad(inGame); }
         else { el.dataset.c = '1'; el.textContent = t('pm.confirmDel'); }
       }
+      else if (a === 'import') $('modal').querySelector('[data-a="importFile"]').click();
+      else if (a === 'importFile' && e.type === 'change' && el.files[0]) {
+        const f = el.files[0], open = $('loadNote');
+        // saves are well under a few MB; anything far larger is not one
+        (f.size > 32e6 ? Promise.resolve('') : f.text()).then(text => {
+          if ($('loadNote') !== open) return; // the window was closed or changed meanwhile
+          const r = readSaveFile(text);
+          if (r.save) this.showLoad(inGame, t('pm.importPick'), { save: r.save, name: f.name });
+          else this.showLoad(inGame, t('pm.' + r.err, { v: r.ver }));
+        }, () => { if ($('loadNote') === open) this.showLoad(inGame, t('pm.importDamaged')); });
+      }
+      else if (a === 'importTo') {
+        if (store('eok.meta.' + s) && !el.dataset.c) { el.dataset.c = '1'; el.textContent = t('pm.confirmReplace'); return; }
+        const ok = importSave(imp.save, s);
+        this.showLoad(inGame, ok ? t('pm.importOk', { n: s }) : t('pm.saveFail'), ok ? null : imp);
+      }
+      else if (a === 'importCancel') this.showLoad(inGame);
     }, 'narrow');
+    $('loadNote').textContent = note || '';
   },
   // Any open window freezes the game (see the main loop); the manual pause state is kept as it was.
   pauseMenu() {

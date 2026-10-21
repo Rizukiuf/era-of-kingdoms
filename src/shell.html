@@ -117,7 +117,9 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .slots { display: grid; gap: 8px; }
 .slot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line-soft); background: rgba(10, 14, 28, .5); border-radius: 3px; }
 .slot b { font-family: var(--f-display); font-weight: 400; color: var(--bronze-hi); }
-.slot .acts { display: flex; gap: 6px; }
+.slot .acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.slot.import { grid-template-columns: minmax(0, 1fr); margin-bottom: 12px; border-color: var(--bronze); }
+.slot.import b { overflow-wrap: anywhere; }
 
 /* ---------- HUD ---------- */
 #hud { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
@@ -288,6 +290,8 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
   .prow .team, .prow .ctrl { grid-column: span 1; }
   .opts { grid-template-columns: minmax(0, 1fr); }
   .set-row { grid-template-columns: minmax(0, 1fr); }
+  .slot { grid-template-columns: minmax(0, 1fr); }
+  .slot .acts { justify-content: flex-start; }
   .menu-col { padding-left: max(20px, env(safe-area-inset-left, 0px)); }
   .menu-item { font-size: 19px; }
   #objectives { width: min(300px, calc(100vw - 24px)); font-size: 13px; max-height: calc(100vh - 360px); overflow-y: auto; }

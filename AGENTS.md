@@ -95,6 +95,6 @@ compact functions.
 
 ## Known gaps (candidate tasks)
 
-Export/import of save files · transport ships and amphibious attacks · trade carts between markets ·
+Transport ships and amphibious attacks · trade carts between markets ·
 installable PWA for offline play · story campaign (Gajah Mada / Sumpah Palapa) · balance report across
 civilizations · online multiplayer (lockstep over WebSocket; the simulation is already command-driven and fixed-step).
