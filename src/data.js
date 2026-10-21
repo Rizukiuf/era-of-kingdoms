@@ -19,6 +19,18 @@ const PCOLORS = [
   { k: 'grey',   c: '#a3a3a3', d: '#575757', l: '#e0e0e0' },
   { k: 'orange', c: '#ec7f22', d: '#8a4610', l: '#f7c08f' },
 ];
+// Color-blind mode (Settings.cb): the Okabe–Ito palette, which stays distinguishable with protanopia, deuteranopia
+// and tritanopia. Same order as PCOLORS, because p.color is an index stored in saves; d is c × .55, l is c + 30% white.
+const PCOLORS_CB = [
+  { k: 'blue',   c: '#0072b2', d: '#003f62', l: '#4d9cc9' },
+  { k: 'red',    c: '#d55e00', d: '#753400', l: '#e28e4d' },
+  { k: 'green',  c: '#009e73', d: '#00573f', l: '#4dbb9d' },
+  { k: 'yellow', c: '#f0e442', d: '#847d24', l: '#f5ec7b' },
+  { k: 'teal',   c: '#56b4e9', d: '#2f6380', l: '#89cbf0' },
+  { k: 'purple', c: '#cc79a7', d: '#70435c', l: '#dba1c1' },
+  { k: 'grey',   c: '#e0e0e0', d: '#7b7b7b', l: '#e9e9e9' },
+  { k: 'orange', c: '#e69f00', d: '#7f5700', l: '#eebc4d' },
+];
 
 // Unit upgrade lines. A building trains a line; the player's current member of the line is produced.
 const LINES = {

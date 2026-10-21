@@ -107,6 +107,10 @@ browsers allow them only over HTTPS or on the computer itself.
   also on another device.
 - **7 languages:** English, Bahasa Indonesia, Español, Français, Deutsch, Português, 日本語.
 - **Touch controls** and a phone layout, alongside mouse and keyboard with hotkeys.
+- **Accessibility settings:** a color-blind mode (player colors from the Okabe–Ito palette, which stays
+  distinguishable with red-green and blue-yellow color blindness, blue → yellow → magenta health bars, and a check
+  or cross on good and bad messages) and an interface size (Small / Normal / Large) for the HUD, tooltips, menus
+  and windows; the battlefield keeps its zoom.
 
 ---
 
@@ -313,8 +317,9 @@ Arguments: minutes, map type, map size in tiles, seed, civilizations, AI levels.
 
 **Browser smoke test.** Opens `index.html` in headless Chromium and plays it with the real mouse and keyboard:
 selecting and ordering villagers, hotkeys, a 15-minute fast-forward, save and load, exporting and importing save
-files (including broken ones), clicking a unit standing behind a building, the speed and pause buttons, quitting
-to the menu and continuing, and the tutorial panel.
+files (including broken ones), clicking a unit standing behind a building, the color-blind mode and the interface
+size (minimap clicks and tooltips with a zoomed HUD), the speed and pause buttons, quitting to the menu and
+continuing, and the tutorial panel.
 It fails on any failed check or page error. One-time setup, then run:
 
 ```bash

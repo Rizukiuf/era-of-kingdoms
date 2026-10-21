@@ -6,7 +6,16 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 ## [Unreleased]
 
 ### Added
-- **Install as an app and play offline** (issue #7). On the website, Chrome and Edge offer **Install** and Safari
+- **Color-blind mode and interface size** (#20, issue #8). Two new rows in **Settings**, applied at once in the menu
+  and during a game, and remembered. **Color-blind mode** switches the 8 player colors to the Okabe–Ito palette,
+  which stays distinguishable with protanopia, deuteranopia and tritanopia (in a simulation, the closest two player
+  colors are now 10.9 CIEDE2000 apart instead of 2.3). Health bars go blue → yellow → magenta, good and bad messages
+  get a check or a cross, and the other red/green signals (not enough resources, move and attack markers) turn blue
+  and magenta. Saves keep their color numbers, so they are not affected. **Interface size** (Small / Normal /
+  Large) scales the top bar, the bottom panel, tooltips, objectives, menus and windows, but not the map. Small is
+  85 %, Large 120 %, a little less on phones in landscape so the top bar still fits (command buttons grow from 44
+  to 48 px on an 844 × 390 phone).
+- **Install as an app and play offline** (#19, issue #7). On the website, Chrome and Edge offer **Install** and Safari
   on iPhone/iPad can **Add to Home Screen**; the app opens full screen in landscape with its own icon. After the
   first visit the game starts without an internet connection, installed or in a browser tab (fonts fall back to
   the system fonts offline). A new version downloads in the background and never interrupts a running game: it
@@ -20,6 +29,10 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
   damaged is refused with a message and leaves every slot as it was. Works offline and from `file://`.
 
 ### Fixed
+- The main menu scrolls when the screen is shorter than the menu (phones in landscape, small laptop windows);
+  its top and bottom were cut off before.
+- Tooltips stay on screen when they fit neither above nor below their button, and on short screens the message
+  feed drops its oldest messages instead of letting the newest slide under the bottom panel.
 - Loading a save that cannot be restored now says so in the Save/Load window instead of silently returning to the
   main menu.
 - The "Game saved." confirmation stays visible after saving into a slot (the window redrew over it).
@@ -31,10 +44,12 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
   CI checks all built files and runs the new `tools/pwa-check.mjs` (install, offline and update test, 9 checks).
 - Browser smoke test: 4 new checks (export download, broken files refused, export → delete → import into another
   slot → load, message when a load fails); 19 checks in total.
+- Browser smoke test: 2 new checks for the display settings (Large interface size with minimap clicks and tooltips
+  that still line up, color-blind mode that redraws the sprites, and switching both back); 21 checks in total.
 
-## [1.0.0] — not yet tagged
+## [1.0.0] — 2026-10-21
 
-First release. Everything below is on `main`; the `v1.0.0` tag and GitHub release have not been created yet.
+First release, tagged `v1.0.0` with a GitHub release.
 
 ### Fixed since the first prototype (found in playtesting)
 - **Farms are clickable** (#4). Farms are drawn flat on the ground and were missing from the click hit list, so

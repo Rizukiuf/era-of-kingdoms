@@ -2,8 +2,34 @@
 // ============================================================
 //  UI: settings, menus, HUD, command card, input, modals
 // ============================================================
-const Settings = Object.assign({ lang: '', music: .4, sfx: .7, speed: 1.5, scroll: 1, edge: true, hpBars: 'damaged', lowFx: false, autoReseed: true }, store('eok.settings') || {});
+const Settings = Object.assign({ lang: '', music: .4, sfx: .7, speed: 1.5, scroll: 1, edge: true, hpBars: 'damaged', lowFx: false, autoReseed: true, cb: false, uiScale: 'normal' }, store('eok.settings') || {});
 function saveSettings() { store('eok.settings', Settings); }
+// Color-blind mode swaps the colors behind the player color indices (p.color is stored in saves, so the indices never
+// change) and turns the other red/green signals blue/magenta. Interface size zooms the HUD and menus through the --ui
+// CSS variable, never the battlefield canvas. Both apply at once, in the menu and during a game, and on every resize.
+const UI_SCALES = { small: .85, normal: 1, large: 1.2 };
+const PCOLORS_STD = PCOLORS.map(c => Object.assign({}, c));
+let paletteCb = false;
+function applyDisplay() {
+  const cb = !!Settings.cb;
+  if (cb !== paletteCb) {
+    paletteCb = cb;
+    PCOLORS.forEach((c, i) => Object.assign(c, (cb ? PCOLORS_CB : PCOLORS_STD)[i]));
+    Art.cache.clear(); // unit sprites, corpses and icons are cached per color index
+    UI.lastSig = ''; UI.selSig = '';
+  }
+  // above the phone layout (761–923 px, e.g. phones in landscape) Large grows only as far as the top bar still fits
+  let z = UI_SCALES[Settings.uiScale] || 1;
+  if (z > 1 && innerWidth > 760) z = Math.max(1, Math.min(z, innerWidth / 770));
+  const cl = document.body.classList;
+  cl.toggle('cvd', cb);
+  cl.toggle('ui-zoom', z !== 1);
+  cl.toggle('ui-tight', z > 1 && innerWidth > 760 && innerWidth / z < 900);
+  if (z !== 1) document.body.style.setProperty('--ui', z); else document.body.style.removeProperty('--ui');
+}
+const hpColor = f => Settings.cb ? (f > .6 ? '#56b4e9' : f > .3 ? '#f0e442' : '#ee5ca0') : (f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a');
+// order markers on the map: move and attack
+const markColor = atk => atk ? (Settings.cb ? 'rgba(238,92,160,A)' : 'rgba(255,90,70,A)') : (Settings.cb ? 'rgba(86,180,233,A)' : 'rgba(140,255,140,A)');
 
 const SVG = {
   food: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 18V7" stroke="#8a6a20" stroke-width="1.4"/><g fill="#e8bf4c" stroke="#8a6a20" stroke-width=".8"><ellipse cx="10" cy="4" rx="1.8" ry="3"/><ellipse cx="7" cy="8" rx="1.6" ry="2.8" transform="rotate(-30 7 8)"/><ellipse cx="13" cy="8" rx="1.6" ry="2.8" transform="rotate(30 13 8)"/><ellipse cx="7" cy="12" rx="1.6" ry="2.6" transform="rotate(-35 7 12)"/><ellipse cx="13" cy="12" rx="1.6" ry="2.6" transform="rotate(35 13 12)"/></g></svg>',
@@ -94,13 +120,14 @@ const UI = {
   init() {
     if (!Settings.lang) { const nl = (navigator.language || 'en').slice(0, 2); Settings.lang = LANGS.some(l => l[0] === nl) ? nl : 'en'; }
     setLang(Settings.lang);
+    applyDisplay();
     this.speed = Settings.speed;
     const cv = $('view');
     R.init(cv);
     this.buildCmdGrid();
     this.bindInput(cv);
     this.bindMinimap($('minimap'));
-    window.addEventListener('resize', () => R.resize());
+    window.addEventListener('resize', () => { R.resize(); applyDisplay(); });
     $('tooltip').style.display = 'none';
     const sp = $('selpanel'), release = () => setTimeout(() => { this.panelHold = false; }, 0);
     sp.addEventListener('pointerdown', () => { this.panelHold = true; });
@@ -263,6 +290,8 @@ const UI = {
       <div class="set-row"><span>${t('set.scroll')}</span><input type="range" min=".4" max="2.5" step=".1" data-k="scroll" value="${Settings.scroll}"></div>
       <div class="set-row"><span>${t('set.edge')}</span>${seg('edge', [true, false], [t('set.on'), t('set.off')])}</div>
       <div class="set-row"><span>${t('set.hp')}</span>${seg('hpBars', ['selected', 'damaged', 'all'], [t('set.hp.selected'), t('set.hp.damaged'), t('set.hp.all')])}</div>
+      <div class="set-row"><span>${t('set.cb')}</span>${seg('cb', [true, false], [t('set.on'), t('set.off')])}</div>
+      <div class="set-row"><span>${t('set.ui')}</span>${seg('uiScale', ['small', 'normal', 'large'], [t('set.ui.small'), t('set.ui.normal'), t('set.ui.large')])}</div>
       <div class="set-row"><span>${t('set.fx')}</span>${seg('lowFx', [false, true], [t('set.fx.high'), t('set.fx.low')])}</div>
       <div class="set-row"><span>${t('set.reseed')}</span>${seg('autoReseed', [true, false], [t('set.on'), t('set.off')])}</div>
       <div class="set-row"><span>${t('set.fullscreen')}</span><div><button class="btn small" data-a="fs">${t('set.fullscreen')}</button></div></div>
@@ -278,6 +307,7 @@ const UI = {
         Settings[k] = v; saveSettings(); Audio2.sfx('click');
         if (k === 'speed' && !inGame) this.speed = v;
         if (k === 'autoReseed' && G && G.human >= 0) G.players[G.human].autoReseed = v;
+        if (k === 'cb' || k === 'uiScale') applyDisplay();
         this.showSettings(inGame);
       }
       if (el.dataset.a === 'fs') { const d = document.documentElement; try { (document.fullscreenElement ? document.exitFullscreen() : d.requestFullscreen()).catch(() => { }); } catch (err) { } }
@@ -454,7 +484,7 @@ const UI = {
     if (!this.sel.length) { set(`<div class="sinfo"><div class="sub">${t('hud.nothing')}</div></div>`); return; }
     const ents = this.sel.map(byId);
     if (ents.length === 1) { set(this.infoHTML(ents[0])); return; }
-    set(`<div class="multi">${ents.slice(0, 60).map(e => { const f = e.hp / e.mhp; return `<button class="mu" data-id="${e.id}" title="${esc(nameOf(e.type))}" aria-label="${esc(nameOf(e.type))}"><img src="${this.iconFor(e)}" alt=""><i style="width:${(f * 100).toFixed(0)}%;background:${f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'}"></i></button>`; }).join('')}</div>`);
+    set(`<div class="multi">${ents.slice(0, 60).map(e => { const f = e.hp / e.mhp; return `<button class="mu" data-id="${e.id}" title="${esc(nameOf(e.type))}" aria-label="${esc(nameOf(e.type))}"><img src="${this.iconFor(e)}" alt=""><i style="width:${(f * 100).toFixed(0)}%;background:${hpColor(f)}"></i></button>`; }).join('')}</div>`);
   },
   // clicks in the selection panel: queue icons cancel, unit icons narrow the selection
   selPanelClick(e) {
@@ -493,7 +523,7 @@ const UI = {
     const f = clamp(e.hp / e.mhp, 0, 1);
     h += `<div class="nm">${esc(nameOf(e.type))}</div>`;
     h += `<div class="sub">${p ? `<span class="pdot" style="background:${pcol(e.owner)}"></span>${esc(pname(e.owner))} · ${civName(p.civ)}` : t('ui.gaia')}</div>`;
-    h += `<div class="hpbar"><i style="width:${(f * 100).toFixed(1)}%;background:${f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'}"></i></div>`;
+    h += `<div class="hpbar"><i style="width:${(f * 100).toFixed(1)}%;background:${hpColor(f)}"></i></div>`;
     const st = [];
     st.push(`<span title="${t('stat.hp')}">♥ <b class="num">${Math.ceil(e.hp)}/${e.mhp}</b></span>`);
     if (s.atk) st.push(`<span title="${t('stat.atk')}">${SVG.atk}<b class="num">${s.atk}</b>${s.shots > 1 ? '×' + s.shots : ''}</span>`);
@@ -691,11 +721,13 @@ const UI = {
   },
   showTip(el, html) {
     const tip = $('tooltip');
-    tip.innerHTML = html; tip.style.display = 'block';
+    // only the inner box is zoomed by the interface size, so the tooltip itself is placed in plain screen pixels
+    tip.innerHTML = `<div class="tz">${html}</div>`; tip.style.display = 'block';
     const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
     let x = r.left + r.width / 2 - tw / 2, y = r.top - th - 8;
     if (y < 8) y = r.bottom + 8;
     x = clamp(x, 8, window.innerWidth - tw - 8);
+    y = clamp(y, 8, window.innerHeight - th - 8); // fits neither above nor below: keep it on screen
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   },
   hideTip() { clearTimeout(this.tipT); $('tooltip').style.display = 'none'; },
@@ -760,7 +792,7 @@ const UI = {
       if (this.mode && this.mode !== 'place') { this.applyMode(wx, wy, tgt, shift); return; }
       const hostileT = tgt && tgt.owner >= 0 && isEnemy(G.human, tgt.owner);
       Cmd.smart(units, wx, wy, tgt, { shift, alt });
-      R.marks.push({ x: tgt ? tgt.x + (tgt.w || 0) / 2 : wx, y: tgt ? tgt.y + (tgt.h || 0) / 2 : wy, t: R.t, col: hostileT ? 'rgba(255,90,70,A)' : tgt && tgt.k === 'r' ? 'rgba(255,220,100,A)' : 'rgba(140,255,140,A)' });
+      R.marks.push({ x: tgt ? tgt.x + (tgt.w || 0) / 2 : wx, y: tgt ? tgt.y + (tgt.h || 0) / 2 : wy, t: R.t, col: hostileT ? markColor(true) : tgt && tgt.k === 'r' ? 'rgba(255,220,100,A)' : markColor(false) });
       Audio2.ack(units[0], hostileT);
       return;
     }
@@ -773,9 +805,9 @@ const UI = {
   applyMode(wx, wy, tgt, shift) {
     const units = this.myUnits();
     const m = this.mode;
-    if (m === 'amove') { Cmd.move(units, wx, wy, { amove: true, shift }); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(255,90,70,A)' }); Audio2.ack(units[0], true); }
+    if (m === 'amove') { Cmd.move(units, wx, wy, { amove: true, shift }); R.marks.push({ x: wx, y: wy, t: R.t, col: markColor(true) }); Audio2.ack(units[0], true); }
     else if (m === 'patrol') { Cmd.patrol(units, wx, wy); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(255,220,100,A)' }); Audio2.ack(units[0], false); }
-    else if (m === 'ground') { Cmd.ground(units, wx, wy); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(255,90,70,A)' }); }
+    else if (m === 'ground') { Cmd.ground(units, wx, wy); R.marks.push({ x: wx, y: wy, t: R.t, col: markColor(true) }); }
     else if (m === 'garrison') { if (tgt && tgt.k === 'b' && tgt.owner === G.human) { if (tgt.type === 'monastery') Cmd.smart(units, wx, wy, tgt, {}); else Cmd.garrison(units, tgt); Audio2.ack(units[0], false); } }
     else if (m === 'repair') { if (tgt && tgt.k === 'b' && allied(tgt.owner, G.human)) Cmd.build(units.filter(isVil), tgt, shift); }
     else if (m === 'rally') { for (const b of this.myBlds()) Cmd.rally(b, wx, wy, tgt && tgt !== b ? tgt.id : 0); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(240,230,190,A)' }); }
@@ -968,7 +1000,7 @@ const UI = {
       if (wx < 0 || wy < 0 || wx > G.N || wy > G.N) return;
       if (right) {
         const units = this.myUnits();
-        if (units.length) { Cmd.move(units, wx, wy, { shift: e.shiftKey, amove: this.mode === 'amove' }); this.cancelMode(); Audio2.ack(units[0], false); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(140,255,140,A)' }); }
+        if (units.length) { Cmd.move(units, wx, wy, { shift: e.shiftKey, amove: this.mode === 'amove' }); this.cancelMode(); Audio2.ack(units[0], false); R.marks.push({ x: wx, y: wy, t: R.t, col: markColor(false) }); }
         else for (const b of this.myBlds()) Cmd.rally(b, wx, wy, 0);
       } else R.centerOn(wx, wy);
     };
@@ -1039,6 +1071,9 @@ const UI = {
     const f = $('feed');
     f.appendChild(el);
     while (f.children.length > 6) f.firstChild.remove();
+    // on short screens (or a large interface) drop the oldest messages until the newest is above the bottom panel
+    const lim = $('bottom').getBoundingClientRect().top;
+    while (f.children.length > 1 && el.getBoundingClientRect().bottom > lim) f.firstChild.remove();
     setTimeout(() => el.classList.add('fade'), 7000);
     setTimeout(() => el.remove(), 8000);
   },

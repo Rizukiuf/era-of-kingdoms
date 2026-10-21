@@ -480,7 +480,7 @@ const R = {
     const bar = (e, sx, sy, w) => {
       const f = clamp(e.hp / e.mhp, 0, 1);
       ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect(sx - w / 2 - 1, sy - 1, w + 2, 5);
-      ctx.fillStyle = f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'; ctx.fillRect(sx - w / 2, sy, w * f, 3);
+      ctx.fillStyle = hpColor(f); ctx.fillRect(sx - w / 2, sy, w * f, 3);
       if (e.k === 'b' && !e.built) { ctx.fillStyle = '#7ab0ff'; ctx.fillRect(sx - w / 2, sy + 3.5, w * e.prog, 2); }
     };
     for (const h of this.hits) {
@@ -620,8 +620,10 @@ const R = {
     ctx.strokeStyle = 'rgba(192,154,91,.6)'; ctx.lineWidth = 1;
     ctx.beginPath(); [T(0, 0), T(N, 0), T(N, N), T(0, N)].forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.stroke();
   },
+  // mx, my: pointer position in screen pixels from the minimap's top left corner. The on-screen size is used, not
+  // clientWidth, because the interface size zooms the minimap (zoom does not change clientWidth).
   miniToWorld(mc, mx, my) {
-    const N = G.N, W = mc.clientWidth, H = mc.clientHeight;
+    const r = mc.getBoundingClientRect(), N = G.N, W = r.width, H = r.height;
     const sx = W / (2 * N), sy = H / (2 * N);
     const px = (mx - W / 2) / sx, py = my / sy;
     return [(px + py) / 2, (py - px) / 2];
