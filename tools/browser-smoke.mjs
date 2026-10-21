@@ -162,10 +162,22 @@ try {
     R.centerOn(f.x + f.w / 2, f.y + f.h / 2); R.cam.z = 1.2; UI.paused = true;
     return { id: f.id, v: u.id };
   });
-  let farmSel = [], farmOrd = 'no farm placed';
+  let farmSel = [], farmOrd = 'no farm placed', corner = null;
   if (farm) {
     await page.waitForTimeout(300);
-    const corner = await page.evaluate(id => { const f = byId(id); return R.toScreen(f.x + .5, f.y + f.h - .5); }, farm.id); // away from any farmer
+    // a point of the farm that nothing covers: the game was paused at a random moment, and villagers walking to
+    // their work cross the new field (a villager on the first corner tried made this check fail now and then)
+    corner = await page.evaluate(id => {
+      const f = byId(id);
+      for (const [dx, dy] of [[.5, f.h - .5], [.5, .5], [f.w - .5, .5], [f.w - .5, f.h - .5], [f.w / 2, f.h / 2], [.5, f.h / 2], [f.w / 2, .5], [f.w - .5, f.h / 2], [f.w / 2, f.h - .5]]) {
+        const [x, y] = R.toScreen(f.x + dx, f.y + dy);
+        if (R.pick(x, y) === f) return [x, y];
+      }
+      return null;
+    }, farm.id);
+    if (!corner) farmOrd = 'no point of the farm can be picked';
+  }
+  if (corner) {
     await page.mouse.click(corner[0], corner[1]);
     farmSel = await page.evaluate(() => UI.sel.slice());
     await page.evaluate(id => UI.select([id], false), farm.v);
@@ -175,7 +187,7 @@ try {
   await page.evaluate(() => { UI.paused = false; });
   check('click selects a farm, right-click sends a villager to farm it',
     !!farm && farmSel.length === 1 && farmSel[0] === farm.id && farmOrd === 'gather:farm',
-    `farm click → ${farmSel.join(',') || 'nothing'}, villager order → ${farmOrd}`);
+    `farm ${farm ? farm.id : '-'}: click → ${farmSel.join(',') || 'nothing'}, villager order → ${farmOrd}`);
 
   // 6d) display settings, through the in-game Settings window: Large interface size and color-blind mode apply at once,
   //     minimap clicks and tooltips still line up with the zoomed HUD, the choice is saved, and Normal / Off restore
