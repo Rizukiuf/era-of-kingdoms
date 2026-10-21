@@ -3,6 +3,25 @@
 All notable changes to Era of Kingdoms. Newest first. Pull request numbers refer to
 https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 
+## [Unreleased]
+
+### Added
+- **Export and import save files** (#18, issue #6). In the Save/Load window every slot that holds a save, the
+  autosave included, has an **Export** button that downloads `era-of-kingdoms-<slot>-<yyyy-mm-dd-hhmm>.json`.
+  **Import file** reads such a file into slot 1, 2 or 3 (an occupied slot asks for a second click), so a game can
+  move to another browser or device; the slot then shows when the file was exported. The file is checked
+  completely before anything is written: a file that is not a save, comes from a newer game version, or is
+  damaged is refused with a message and leaves every slot as it was. Works offline and from `file://`.
+
+### Fixed
+- Loading a save that cannot be restored now says so in the Save/Load window instead of silently returning to the
+  main menu.
+- The "Game saved." confirmation stays visible after saving into a slot (the window redrew over it).
+
+### Project and tooling
+- Browser smoke test: 4 new checks (export download, broken files refused, export → delete → import into another
+  slot → load, message when a load fails); 19 checks in total.
+
 ## [1.0.0] — not yet tagged
 
 First release. Everything below is on `main`; the `v1.0.0` tag and GitHub release have not been created yet.

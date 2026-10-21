@@ -12,7 +12,8 @@
 // Run:
 //   node build.mjs && node tools/browser-smoke.mjs
 import { createRequire } from 'node:module';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -176,6 +177,86 @@ try {
     !!farm && farmSel.length === 1 && farmSel[0] === farm.id && farmOrd === 'gather:farm',
     `farm click → ${farmSel.join(',') || 'nothing'}, villager order → ${farmOrd}`);
 
+  // 6d) save files, all through the in-game Save/Load window: slot 2 holds an older game, slot 1 the current one
+  const game = await page.evaluate(() => {
+    saveGame('2');
+    for (let i = 0; i < 30 * 20; i++) stepGame();
+    saveGame('1');
+    const p = G.players[G.human];
+    return { u: G.units.length, b: G.blds.length, time: G.time, res: JSON.stringify(p.res) };
+  });
+  const slotsNow = () => page.evaluate(() => ['1', '2'].map(s => [localStorage.getItem('eok.save.' + s), localStorage.getItem('eok.meta.' + s)]));
+  const [slot1, slot2] = await slotsNow();
+  await page.click('#btnMenu');
+  await page.click('#modal [data-a="saveload"]');
+  const fileDir = mkdtempSync(join(tmpdir(), 'eok-smoke-'));
+  const pickFile = async file => {
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser', { timeout: 5000 }), page.click('#modal [data-a="import"]', { timeout: 5000 })]);
+    await chooser.setFiles(file);
+  };
+  const noteIs = (key, params) => page.waitForFunction(([key, params]) => document.getElementById('loadNote')?.textContent === t(key, params), [key, params], { timeout: 5000 }).then(() => true, () => false);
+  const note = () => page.evaluate(() => document.getElementById('loadNote')?.textContent || '');
+
+  //   Export on slot 1 downloads the save wrapped in a small header
+  let exp = null;
+  try {
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 5000 }), page.click('#modal [data-a="export"][data-s="1"]', { timeout: 5000 })]);
+    const file = join(fileDir, dl.suggestedFilename());
+    await dl.saveAs(file);
+    exp = { name: dl.suggestedFilename(), file, text: readFileSync(file, 'utf8') };
+    exp.f = JSON.parse(exp.text);
+  } catch (e) { }
+  const version = await page.evaluate(() => GAME_VERSION);
+  check('Export downloads a save slot as a .json file',
+    !!exp && /^era-of-kingdoms-1-\d{4}-\d\d-\d\d-\d{4}\.json$/.test(exp.name) && exp.f.format === 'era-of-kingdoms-save' && exp.f.saveVersion === 1
+      && exp.f.gameVersion === version && Math.abs(exp.f.exportedAt - Date.now()) < 10 * 60e3 && JSON.stringify(exp.f.save) === slot1[0],
+    exp ? `${exp.name}, ${Math.round(exp.text.length / 1024)} KB` : 'no download');
+
+  //   broken files are refused with a reason, and no slot changes
+  const broken = exp ? [
+    ['cut-off file', exp.text.slice(0, exp.text.length >> 1), 'pm.importDamaged'],
+    ['other JSON', '{"hello":"world"}', 'pm.importBad'],
+    ['newer version', JSON.stringify(Object.assign({}, exp.f, { saveVersion: 99, gameVersion: '9.9.9' })), 'pm.importNewer'],
+    ['unknown unit type', exp.text.replace('"type":"villager"', '"type":"<img src=x onerror=alert(1)>"'), 'pm.importDamaged'],
+  ] : [];
+  const refused = [];
+  for (const [what, text, key] of broken) {
+    try { await pickFile({ name: 'save.json', mimeType: 'application/json', buffer: Buffer.from(text) }); } catch (e) { refused.push(what + ': no import button'); continue; }
+    const shown = await noteIs(key, { v: '9.9.9' }), picking = await page.locator('#modal [data-a="importTo"]').count();
+    refused.push(`${what}: ${shown && !picking ? 'refused' : 'NOT refused (' + (await note() || 'no message') + ')'}`);
+  }
+  const untouched = JSON.stringify(await slotsNow()) === JSON.stringify([slot1, slot2]);
+  check('broken save files are refused with a message and change no slot',
+    broken.length > 0 && refused.every(r => r.endsWith(': refused')) && untouched,
+    `${refused.join(', ') || 'no export file to break'}; slots ${untouched ? 'unchanged' : 'CHANGED'}`);
+
+  //   delete slot 1, import the file into occupied slot 2 (confirm twice) and load it: the same game comes back
+  let imp = 'no export file';
+  if (exp) {
+    try {
+      await page.click('#modal [data-a="del"][data-s="1"]'); await page.click('#modal [data-a="del"][data-s="1"]');
+      await pickFile(exp.file);
+      await page.click('#modal [data-a="importTo"][data-s="2"]', { timeout: 5000 });
+      const askFirst = (await page.textContent('#modal [data-a="importTo"][data-s="2"]')) === (await page.evaluate(() => t('pm.confirmReplace')))
+        && (await slotsNow())[1][0] === slot2[0];
+      await page.click('#modal [data-a="importTo"][data-s="2"]');
+      const done = await noteIs('pm.importOk', { n: '2' });
+      const [s1, s2] = await slotsNow(), meta = JSON.parse(s2[1] || 'null');
+      // capture the game the moment it is restored, before the main loop moves it on
+      await page.evaluate(() => {
+        const enter = enterLoadedGame;
+        window.enterLoadedGame = f => { enter(f); const p = G.players[G.human]; window.__restored = { u: G.units.length, b: G.blds.length, time: G.time, res: JSON.stringify(p.res) }; window.enterLoadedGame = enter; };
+      });
+      await page.click('#modal [data-a="load"][data-s="2"]');
+      await page.waitForFunction(() => UI.screen === 'game' && window.__restored, null, { timeout: 30000 });
+      const back = await page.evaluate(() => window.__restored);
+      imp = { askFirst, done, slot1Empty: s1[0] === null, slot2IsFile: s2[0] === slot1[0], meta: !!meta && meta.time === game.time && meta.date === exp.f.exportedAt, sameGame: JSON.stringify(back) === JSON.stringify(game) };
+    } catch (e) { imp = (e && e.message || String(e)).split('\n')[0]; }
+  }
+  check('export → delete → import into another slot → load gives the same game',
+    typeof imp === 'object' && Object.values(imp).every(Boolean), typeof imp === 'object' ? JSON.stringify(imp) : imp);
+  if (await page.evaluate(() => !document.getElementById('modal').hidden)) await page.click('#modal [data-a="close"]');
+
   // 7) the speed button cycles 1× → 1.5× → 2× → 3× and wraps back to 1×
   const speeds = [];
   for (let i = 0; i < 5; i++) { await page.click('#btnSpeed'); speeds.push(await page.evaluate(() => UI.speed)); }
@@ -222,6 +303,20 @@ try {
   await page.click('#objectives [data-a="tut-toggle"]');
   const hBack = await tutH();
   check('tutorial panel can be hidden and shown', hHidden < hOpen / 2 && hBack === hOpen, `height ${hOpen} → ${hHidden} → ${hBack}px`);
+
+  // 11) a save that passes as a slot but cannot be restored says so instead of silently showing the menu
+  await page.evaluate(() => {
+    localStorage.setItem('eok.save.3', '{"v":1,"N":80}');
+    localStorage.setItem('eok.meta.3', JSON.stringify({ civ: 'franks', map: 'rivers', age: 1, time: 60, date: Date.now() }));
+  });
+  const errorsBefore = errors.length;
+  await page.click('#btnMenu');
+  await page.click('#modal [data-a="saveload"]');
+  await page.click('#modal [data-a="load"][data-s="3"]');
+  const failNote = await page.waitForFunction(() => UI.screen === 'menu' && !document.getElementById('modal').hidden
+    && document.getElementById('loadNote')?.textContent === t('pm.loadFail'), null, { timeout: 10000 }).then(() => true, () => false);
+  errors.splice(errorsBefore); // the failed restore is logged on purpose
+  check('a save that fails to load shows a message', failNote, failNote ? '' : `screen ${await page.evaluate(() => UI.screen)}, note "${await note()}"`);
 } catch (e) {
   check('test ran to the end', false, (e && e.message || String(e)).split('\n')[0]);
 }

@@ -42,8 +42,10 @@ always runs the latest version of the `main` branch. On a phone, landscape orien
 Notes:
 - **Fonts.** When online, the game loads two fonts from Google Fonts. Offline it falls back to the system's
   serif and sans-serif fonts. It looks slightly different and plays the same.
-- **Saved games** live in the browser's storage (localStorage), not in files. They exist only in that browser on
-  that device, and clearing site data or using a private window removes them.
+- **Saved games** live in the browser's storage (localStorage). They exist only in that browser on that device,
+  and clearing site data or using a private window removes them. To keep a game or move it to another device or
+  browser, open **Save / Load** (main menu → **Load**, or in a game: menu → **Save / Load**), press **Export** on
+  the slot to download it as a `.json` file, and on the other device use **Import file** and choose a slot.
 - Some browsers restrict storage for pages opened straight from a file (`file://`). If saving does not work,
   use a local server (below).
 
@@ -88,7 +90,8 @@ computer's firewall.
 - **Computer opponents** at 4 difficulty levels (Easy, Normal, Hard, Hardest) that build an economy, research,
   counter your army composition, defend and attack in waves.
 - **11-step interactive tutorial**, a how-to-play guide, a tech tree, score screens and statistics at the end.
-- **Save and load:** 3 save slots plus an autosave.
+- **Save and load:** 3 save slots plus an autosave; any slot can be exported to a `.json` file and imported again,
+  also on another device.
 - **7 languages:** English, Bahasa Indonesia, Español, Français, Deutsch, Português, 日本語.
 - **Touch controls** and a phone layout, alongside mouse and keyboard with hotkeys.
 
@@ -224,7 +227,7 @@ another page.
 | `render.js` | Isometric camera (64 × 32 tiles), terrain as one large texture, depth sorting, fog, particles, minimap, and picking (what is under the cursor). |
 | `art_*.js` | All graphics are drawn with Canvas code and cached as sprites. Units in `UNIT_ART`; buildings in `drawBld()` with 4 architecture styles (`ARCH`: west, nusa, east, mideast). |
 | `ui.js` | Menus, skirmish setup, HUD, 5 × 3 command card (hotkeys Q–B), tooltips, mouse/keyboard/touch input, windows (tech tree, scores, end screen), tutorial. |
-| `main.js` | `requestAnimationFrame` loop with a fixed-step accumulator, save/load (`serializeGame`/`restoreGame`), the AI battle behind the main menu. |
+| `main.js` | `requestAnimationFrame` loop with a fixed-step accumulator, save/load (`serializeGame`/`restoreGame`), save-file export and checked import (`exportSave`/`readSaveFile`), the AI battle behind the main menu. |
 
 localStorage keys: `eok.settings`, `eok.setup`, `eok.tutCollapsed`, `eok.save.<slot>` and `eok.meta.<slot>`
 (slots `auto`, `1`, `2`, `3`).
@@ -277,8 +280,9 @@ Arguments: minutes, map type, map size in tiles, seed, civilizations, AI levels.
 `data.js`, `sim.js`, `cmd.js`, `ai.js` or `map.js`. `OK: no errors.` at the end means the match ran without a crash.
 
 **Browser smoke test.** Opens `index.html` in headless Chromium and plays it with the real mouse and keyboard:
-selecting and ordering villagers, hotkeys, a 15-minute fast-forward, save and load, clicking a unit standing
-behind a building, the speed and pause buttons, quitting to the menu and continuing, and the tutorial panel.
+selecting and ordering villagers, hotkeys, a 15-minute fast-forward, save and load, exporting and importing save
+files (including broken ones), clicking a unit standing behind a building, the speed and pause buttons, quitting
+to the menu and continuing, and the tutorial panel.
 It fails on any failed check or page error. One-time setup, then run:
 
 ```bash
@@ -322,7 +326,6 @@ any limits, just like a well-written issue; you can also point the agent at an i
 - No story campaign yet (for example Gajah Mada and the Palapa Oath).
 - Graphics are drawn in code rather than by an artist; `art_*.js` could switch to PNG sprite sheets.
 - No transport ships or amphibious attacks, and no trade carts between markets.
-- Saves stay in the local browser; export/import of save files would allow moving between devices.
 - Not yet installable as an app (PWA) or packaged for desktop/Android (Electron, Tauri, Capacitor).
 
 All code, graphics and music were made for this project. The only outside resources are two Google Fonts

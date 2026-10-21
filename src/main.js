@@ -155,13 +155,14 @@ function restoreGame(d) {
   UI.groups = d.groups || {};
   return d.cam;
 }
+// slot list entry (eok.meta.<slot>); works on G and on a parsed save
+function saveMeta(g, date) { const p = g.players[g.human]; return { civ: p.civ, map: g.mapType, age: p.age, time: g.time, date: date || Date.now() }; }
 function saveGame(slot) {
   if (!G || G.cfg.attract) return false;
   try {
     const s = serializeGame();
     localStorage.setItem('eok.save.' + slot, s);
-    const p = G.players[G.human];
-    store('eok.meta.' + slot, { civ: p.civ, map: G.mapType, age: p.age, time: G.time, date: Date.now() });
+    store('eok.meta.' + slot, saveMeta(G));
     return true;
   } catch (e) { return false; }
 }
@@ -179,8 +180,75 @@ function loadGame(slot) {
       enterLoadedGame(false);
       if (cam) { R.cam.x = cam.x; R.cam.y = cam.y; R.cam.z = cam.z; }
       UI.feed(t('msg.loaded'), 'good');
-    } catch (e) { console.error(e); hideLoading(); startAttract(); UI.showMenu(); }
+    } catch (e) { console.error(e); hideLoading(); startAttract(); UI.showMenu(); UI.showLoad(false, t('pm.loadFail')); }
   }, 40);
+}
+
+// ------------------------------------------------------------
+// Save files: a slot exported to .json and imported back. An imported file is untrusted data: it is
+// checked completely before anything is written, and the slot list entry is rebuilt from its content.
+// ------------------------------------------------------------
+const SAVE_FORMAT = 'era-of-kingdoms-save', SAVE_VERSION = 1;
+function exportSave(slot) {
+  try {
+    const d = JSON.parse(localStorage.getItem('eok.save.' + slot)), now = new Date(), p = n => (n < 10 ? '0' : '') + n;
+    const text = JSON.stringify({ format: SAVE_FORMAT, saveVersion: d.v, gameVersion: GAME_VERSION, exportedAt: now.getTime(), save: d });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    a.download = `era-of-kingdoms-${slot}-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    return true;
+  } catch (e) { console.error(e); return false; }
+}
+// Returns { save, date } or { err: i18n key suffix, ver }. The export time becomes the slot date;
+// a file without a usable one gets the time of the import.
+function readSaveFile(text) {
+  let f = null;
+  try { f = JSON.parse(text); } catch (e) { }
+  // a cut-off file still starts with the format tag
+  if (!f || f.format !== SAVE_FORMAT) return { err: /^\s*\{\s*"format"\s*:\s*"era-of-kingdoms-save"/.test(text) ? 'importDamaged' : 'importBad' };
+  const d = f.save, newer = v => Number.isInteger(v) && v > SAVE_VERSION;
+  if (newer(f.saveVersion) || newer(d && d.v)) return { err: 'importNewer', ver: String(f.gameVersion || '?').slice(0, 20) };
+  const date = Number.isInteger(f.exportedAt) && f.exportedAt > 0 && f.exportedAt <= 8.64e15 ? f.exportedAt : 0;
+  try { if (f.saveVersion === d.v && saveOk(d)) return { save: d, date }; } catch (e) { }
+  return { err: 'importDamaged' };
+}
+// Every string in a save is an id (unit, building, tech, order, map type…), a base64 grid or a player name.
+// Holding ids to this pattern keeps markup out of the interface, which shows many of them through t().
+const SAVE_ID = /^\w{0,40}$/;
+function saveStringsOk(v, key) {
+  if (typeof v === 'string') return key === 'name' ? v.length <= 60 : SAVE_ID.test(v);
+  if (v && typeof v === 'object') for (const k in v) if (k === '__proto__' || !saveStringsOk(v[k], k)) return false;
+  return true;
+}
+// The fields restoreGame() and the slot list rely on, with sane types and sizes.
+function saveOk(d) {
+  const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k), int = (x, lo, hi) => Number.isInteger(x) && x >= lo && x <= hi;
+  const N = d.N, ps = d.players, np = Array.isArray(ps) ? ps.length : 0, ids = new Set();
+  const grid = b => typeof b === 'string' && bytesFromB64(b).length === N * N;
+  const ent = (e, k, types) => {
+    if (!e || e.k !== k || !has(types, e.type) || !int(e.id, 1, d.nextId - 1) || ids.has(e.id) || !int(e.owner, -1, np - 1)) return false;
+    ids.add(e.id);
+    return Number.isFinite(e.x) && Number.isFinite(e.y) && e.x >= -1 && e.y >= -1 && e.x <= N + 1 && e.y <= N + 1;
+  };
+  return int(d.v, 1, SAVE_VERSION) && Object.values(MAP_SIZES).includes(N) && int(np, 1, 8) && int(d.human, 0, np - 1)
+    && MAP_TYPES.includes(d.mapType) && Number.isFinite(d.time) && d.time >= 0 && Number.isInteger(d.tick) && Number.isInteger(d.nextId) && Number.isInteger(d.rs)
+    && !!d.cfg && d.cfg.N === N && Array.isArray(d.cfg.players) && d.cfg.players.length === np
+    && grid(d.terrain) && Array.isArray(d.vis) && int(d.vis.length, 1, np) && d.vis.every(grid)
+    && Array.isArray(d.visIdx) && d.visIdx.length === np && d.visIdx.every(i => int(i, 0, d.vis.length - 1))
+    && Array.isArray(d.starts) && d.starts.length === np && d.starts.every(s => s && Number.isFinite(s.x) && Number.isFinite(s.y))
+    && ps.every((p, i) => p && p.id === i && has(CIVS, p.civ) && int(p.age, 0, 3) && int(p.color, 0, PCOLORS.length - 1))
+    && [[d.units, 'u', U], [d.blds, 'b', B], [d.ress, 'r', Object.assign({ relic: 1 }, RES_KIND)]].every(([a, k, types]) => Array.isArray(a) && a.every(e => ent(e, k, types)))
+    && Object.keys(d).every(k => k !== '__proto__' && (k === 'terrain' || k === 'vis' || saveStringsOk(d[k], k)));
+}
+// Writes a checked save into a slot; on failure (storage full) the slot keeps what it had.
+function importSave(d, slot, date) {
+  const k = 'eok.save.' + slot;
+  let old = null;
+  try { old = localStorage.getItem(k); } catch (e) { return false; }
+  try { localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem('eok.meta.' + slot, JSON.stringify(saveMeta(d, date))); return true; }
+  catch (e) { try { if (old == null) localStorage.removeItem(k); else localStorage.setItem(k, old); } catch (e2) { } return false; }
 }
 
 // ------------------------------------------------------------
