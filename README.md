@@ -220,6 +220,7 @@ era-of-kingdoms/
 │   └── icon.svg          ← app icon (only rect, circle and polygon, so the build can draw the PNGs)
 ├── tools/
 │   ├── sim-test.mjs      ← headless AI-vs-AI simulation test (needs only Node.js)
+│   ├── balance-report.mjs ← AI-vs-AI balance report across all civilizations (needs only Node.js)
 │   ├── browser-smoke.mjs ← automated test in a real browser (needs Playwright)
 │   └── pwa-check.mjs     ← install, offline and update test over a local server (needs Playwright)
 └── .github/              ← CI workflow, issue templates, pull request template
@@ -314,6 +315,20 @@ node tools/sim-test.mjs 30 rivers 96 7 majapahit,japanese,ottomans hard,hardest,
 
 Arguments: minutes, map type, map size in tiles, seed, civilizations, AI levels. Run it after every change to
 `data.js`, `sim.js`, `cmd.js`, `ai.js` or `map.js`. `OK: no errors.` at the end means the match ran without a crash.
+
+**Balance report (no browser, nothing to install).** Plays every 1v1 pairing of the civilizations between computer
+players, several times each with the start positions swapped, in parallel worker threads. It prints a Markdown
+report: win rate per civilization with a 95% interval and a head-to-head table, median age-up times, the most
+effective units (resource value of the enemy units and buildings they killed, divided by what they cost) and how
+the matches ended. Use it before and after a balance change; the same arguments always give the same report.
+
+```bash
+node tools/balance-report.mjs --games 1 --minutes 25 --civs majapahit,britons,franks   # quick check, under a minute
+node tools/balance-report.mjs --out report.md         # all 8 civilizations: 28 pairings × 4 games of 40 minutes
+```
+
+`--help` lists the options: games per pairing, minutes, map type and size, AI level, civilizations, worker threads
+(default: CPU cores minus 1), seed and output file. A full run takes about 13 minutes with 15 worker threads (16 logical cores), so it is not part of CI.
 
 **Browser smoke test.** Opens `index.html` in headless Chromium and plays it with the real mouse and keyboard:
 selecting and ordering villagers, hotkeys, a 15-minute fast-forward, save and load, exporting and importing save
