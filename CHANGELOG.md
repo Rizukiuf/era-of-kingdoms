@@ -25,6 +25,11 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 - The "Game saved." confirmation stays visible after saving into a slot (the window redrew over it).
 
 ### Project and tooling
+- New developer tool `tools/balance-report.mjs` (issue #9): plays every 1v1 pairing of the civilizations between
+  computer players in parallel worker threads and prints a Markdown report with win rates (95% intervals and a
+  head-to-head table), median age-up times, the most effective units (kill value per resource spent) and how the
+  matches ended. Deterministic: the same arguments give the same report. It needs only Node.js, collects its unit
+  statistics by wrapping game functions inside its VM, and is not part of CI.
 - The build also writes `sw.js`, `manifest.webmanifest`, `icon.svg` and `icon-180/192/512.png` from `src/sw.js`,
   `src/manifest.webmanifest` and `src/icon.svg`; it draws the PNG icons itself, byte-identical from `build.mjs`
   and `build.py`. Both builds read sources with `\n` line endings, so a Windows checkout builds the same files.

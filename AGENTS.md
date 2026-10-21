@@ -40,7 +40,7 @@ and write the few small files that make the game an installable app with offline
    lacks them (see `restoreGame()` and `rebuildIndex()`).
 6. **Global-script style.** Every `src/*.js` file is a classic script sharing globals, loaded in the order of
    `ORDER` in `build.py` and `build.mjs`. A new file must be added to both lists, and to `SIM_ORDER` in
-   `tools/sim-test.mjs` if the simulation needs it.
+   `tools/sim-test.mjs` and `tools/balance-report.mjs` if the simulation needs it.
 7. **Performance budget.** `node tools/sim-test.mjs 40 forest 112 4242 majapahit,japanese,ottomans,chinese,byzantines,mongols hard,hardest,hard,hardest,hard,hardest`
    should stay under about 100 ms CPU per game second.
 
@@ -52,6 +52,7 @@ and write the few small files that make the game an installable app with offline
 | Headless simulation test (run before every commit that touches `data`, `sim`, `cmd`, `ai` or `map`) | `node tools/sim-test.mjs 30` and `node tools/sim-test.mjs 30 rivers 96 7 majapahit,japanese,ottomans hard,hardest,normal` — both must end with `OK: no errors.` |
 | Browser smoke test (one-time setup: `npm install --no-save playwright@1.56.0 && npx playwright install chromium`) | `node tools/browser-smoke.mjs` — must end with `OK: all … checks passed` |
 | Install and offline check (same setup; run after changes to `sw.js`, the manifest, icons, `initPwa()` or the build) | `node tools/pwa-check.mjs` — must end with `OK: all … checks passed` |
+| Balance report (developer tool, not in CI; a full run takes about 13 minutes on 16 cores) | `node tools/balance-report.mjs --out report.md`; quick check: `node tools/balance-report.mjs --games 1 --minutes 25 --civs majapahit,britons,franks`; `--help` for the options |
 | Play | open `index.html` in a browser |
 
 There is no linter or formatter. Match the surrounding style: 2-space indent, single quotes, semicolons,
@@ -82,7 +83,9 @@ compact functions.
 ## Where common changes go
 
 - Balance: numbers in `data.js`; AI behaviour constants at the top of `ai.js`. Verify with the sim test
-  (age-up times and kills are printed at the end).
+  (age-up times and kills are printed at the end), and compare `node tools/balance-report.mjs` before and after the
+  change (win rates, age-up times and unit effectiveness over all pairings). Put both reports in the PR description;
+  do not commit them.
 - New unit, technology, civilization, language or map: follow README section 7 (Adding content).
 - Documentation, comments, commit messages and PR descriptions are written in English. Player-visible text is translated (rule 3).
 - Visual change: `art_units.js` / `art_bld.js`. Sprites are cached by key; include every parameter that changes
