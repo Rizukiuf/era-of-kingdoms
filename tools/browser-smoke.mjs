@@ -177,7 +177,60 @@ try {
     !!farm && farmSel.length === 1 && farmSel[0] === farm.id && farmOrd === 'gather:farm',
     `farm click → ${farmSel.join(',') || 'nothing'}, villager order → ${farmOrd}`);
 
-  // 6d) save files, all through the in-game Save/Load window: slot 2 holds an older game, slot 1 the current one
+  // 6d) display settings, through the in-game Settings window: Large interface size and color-blind mode apply at once,
+  //     minimap clicks and tooltips still line up with the zoomed HUD, the choice is saved, and Normal / Off restore
+  //     the look (the villager sprite and icon are drawn again, pixel for pixel as before)
+  const setOpt = (k, v) => page.click(`#modal [data-a="set"][data-k="${k}"][data-v="${v}"]`, { timeout: 5000 });
+  const look = () => page.evaluate(() => ({
+    btn: Math.round(document.querySelector('#cmdgrid .cb:not(.empty)').getBoundingClientRect().height),
+    c1: PCOLORS[1].c, cb1: typeof PCOLORS_CB === 'undefined' ? null : PCOLORS_CB[1].c, spr: unitSprite('villager', 1, 'idle', 0, 0, '', '', 0).c.toDataURL(), icon: iconURL('unit', 'villager', 1),
+    cls: document.body.className,
+  }));
+  let disp = null;
+  try {
+    await page.evaluate(() => { UI.select([G.blds.find(b => b.owner === G.human && b.type === 'tc').id], false); UI.updateHUD(); });
+    const before = await look();
+    await page.click('#btnMenu'); await page.click('#modal [data-a="settings"]');
+    await setOpt('uiScale', 'large'); await setOpt('cb', 'true');
+    await page.click('#modal [data-a="close"]');
+    await page.evaluate(() => UI.updateHUD());
+    const on = await look();
+    const saved = await page.evaluate(() => store('eok.settings'));
+    // click the minimap where world point (45%, 55%) is drawn: the camera must center there
+    const mini = await page.evaluate(() => {
+      const r = document.getElementById('minimap').getBoundingClientRect(), N = G.N, wx = N * .45, wy = N * .55;
+      return { x: r.left + r.width / 2 + (wx - wy) * r.width / (2 * N), y: r.top + (wx + wy) * r.height / (2 * N), wx, wy };
+    });
+    await page.mouse.click(mini.x, mini.y);
+    const cam = await page.evaluate(() => [R.cam.x / TW + R.cam.y / TH, R.cam.y / TH - R.cam.x / TW]);
+    const miniOff = Math.hypot(cam[0] - mini.wx, cam[1] - mini.wy);
+    // the tooltip of the first command button sits right above it
+    const bb = await page.locator('#cmdgrid .cb:not(.empty)').first().boundingBox();
+    await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2);
+    await page.waitForTimeout(300);
+    const tip = await page.locator('#tooltip').boundingBox();
+    const tipOk = !!tip && tip.y + tip.height <= bb.y + 1 && tip.y + tip.height >= bb.y - 20 && tip.x <= bb.x + bb.width / 2 && bb.x + bb.width / 2 <= tip.x + tip.width;
+    await page.mouse.move(5, 300);
+    await page.click('#btnMenu'); await page.click('#modal [data-a="settings"]');
+    await setOpt('uiScale', 'normal'); await setOpt('cb', 'false');
+    await page.click('#modal [data-a="close"]');
+    await page.evaluate(() => UI.updateHUD());
+    const off = await look();
+    disp = {
+      size: `button ${before.btn} → ${on.btn} → ${off.btn}px, minimap click ${miniOff.toFixed(1)} tiles off, tooltip ${tipOk ? 'above the button' : 'misplaced ' + JSON.stringify(tip)}`,
+      sizeOk: on.btn >= before.btn * 1.15 && off.btn === before.btn && /ui-zoom/.test(on.cls) && !/ui-zoom/.test(off.cls) && miniOff < 1.5 && tipOk,
+      color: `PCOLORS[1] ${before.c1} → ${on.c1} → ${off.c1}, sprite ${on.spr !== before.spr ? 'redrawn' : 'NOT redrawn'} → ${off.spr === before.spr ? 'restored' : 'NOT restored'}, icon ${on.icon !== before.icon && off.icon === before.icon ? 'redrawn and restored' : 'WRONG'}, saved ${JSON.stringify({ cb: saved.cb, uiScale: saved.uiScale })}`,
+      colorOk: on.c1 !== before.c1 && on.c1 === on.cb1 && off.c1 === before.c1 && on.spr !== before.spr && off.spr === before.spr
+        && on.icon !== before.icon && off.icon === before.icon && saved.cb === true && saved.uiScale === 'large' && /cvd/.test(on.cls) && !/cvd/.test(off.cls),
+    };
+  } catch (e) { disp = (e && e.message || String(e)).split('\n')[0]; }
+  check('interface size Large enlarges the HUD, minimap clicks and tooltips line up, Normal restores it',
+    typeof disp === 'object' && disp.sizeOk, typeof disp === 'object' ? disp.size : disp);
+  check('color-blind mode swaps the player colors and redraws the sprites, Off restores them, the choice is saved',
+    typeof disp === 'object' && disp.colorOk, typeof disp === 'object' ? disp.color : disp);
+  if (await page.evaluate(() => !document.getElementById('modal').hidden)) await page.click('#modal [data-a="close"]');
+
+  // 6e) save files, all through the in-game Save/Load window: slot 2 holds an older game, slot 1 the current one
   const game = await page.evaluate(() => {
     saveGame('2');
     for (let i = 0; i < 30 * 20; i++) stepGame();

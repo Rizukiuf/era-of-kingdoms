@@ -41,6 +41,7 @@
   --f-cjk: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
   --kawung: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23c39a5c' stroke-opacity='.10' stroke-width='1'%3E%3Cellipse cx='24' cy='12' rx='6' ry='10'/%3E%3Cellipse cx='24' cy='36' rx='6' ry='10'/%3E%3Cellipse cx='12' cy='24' rx='10' ry='6'/%3E%3Cellipse cx='36' cy='24' rx='10' ry='6'/%3E%3Ccircle cx='24' cy='24' r='2'/%3E%3Ccircle cx='0' cy='0' r='2'/%3E%3Ccircle cx='48' cy='0' r='2'/%3E%3Ccircle cx='0' cy='48' r='2'/%3E%3Ccircle cx='48' cy='48' r='2'/%3E%3C/g%3E%3C/svg%3E");
   color-scheme: dark;
+  --ui: 1;                   /* interface size, see "display settings" below */
 }
 html, body { height: 100%; }
 body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--f-body); font-size: 15px; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -73,7 +74,12 @@ label.field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; display: flex; z-index: 20; }
 #menu { background: linear-gradient(90deg, rgba(7, 10, 18, .92) 0%, rgba(7, 10, 18, .72) 34%, rgba(7, 10, 18, .1) 70%, rgba(7, 10, 18, .35) 100%); }
-.menu-col { width: min(440px, 100%); display: flex; flex-direction: column; justify-content: center; gap: 28px; padding-block: 32px; padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.menu-col { width: min(440px, 100%); display: flex; flex-direction: column; gap: 28px; overflow-y: auto; scrollbar-width: none; padding-block: 32px; padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+/* centered when it fits, scrollable from the top when it does not (short phone screens, large interface size);
+   the scroll bar stays hidden, wheel and touch scroll it */
+.menu-col::-webkit-scrollbar { display: none; }
+.menu-col > :first-child { margin-top: auto; }
+.menu-col > :last-child { margin-bottom: auto; }
 .brand .eyebrow { margin-bottom: 10px; }
 .brand h1 { font-size: clamp(40px, 6vw, 64px); line-height: .95; color: var(--bronze-hi); text-shadow: 0 2px 0 #3a2410, 0 0 30px rgba(195, 154, 92, .25); }
 .brand p { margin: 12px 0 0; color: var(--muted); max-width: 34ch; line-height: 1.45; }
@@ -159,14 +165,14 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .tbtn svg { width: 18px; height: 18px; }
 .tbtn > *, .resb > *, .cb > *, #selpanel button > * { pointer-events: none; }
 .tbtn .cnt { font-weight: 700; color: var(--warn); }
-#feed { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; max-width: min(520px, 70vw); pointer-events: none; }
+#feed { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; max-width: min(520px, calc(70vw / var(--ui))); pointer-events: none; }
 .msg { font-size: 14px; padding: 4px 10px; background: rgba(8, 11, 20, .72); border-left: 3px solid var(--bronze); border-radius: 2px; color: var(--text); text-shadow: 0 1px 2px #000; animation: msgIn .25s ease-out; }
 .msg.bad { border-left-color: var(--bad); color: #ffd9d2; }
 .msg.good { border-left-color: var(--good); }
 .msg.info { border-left-color: var(--info); }
 .msg.fade { opacity: 0; transition: opacity .8s; }
 @keyframes msgIn { from { transform: translateX(-8px); opacity: 0; } }
-#objectives { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); width: min(320px, 46vw); padding: 12px 14px; border-radius: 3px; display: grid; gap: 8px; }
+#objectives { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); width: min(320px, calc(46vw / var(--ui))); padding: 12px 14px; border-radius: 3px; display: grid; gap: 8px; }
 #objectives h3 { font-size: 16px; color: var(--bronze-hi); }
 #objectives .obj { display: grid; grid-template-columns: 18px 1fr; gap: 6px; font-size: 14px; line-height: 1.35; }
 #objectives .obj.done { color: var(--muted); text-decoration: line-through; }
@@ -176,7 +182,7 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .tut-tog { appearance: none; border: 1px solid var(--line); background: rgba(10, 14, 28, .6); color: var(--muted); font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 3px; cursor: pointer; white-space: nowrap; flex: none; }
 .tut-tog:hover { color: var(--text); border-color: var(--bronze); }
 #objectives .tut-cur { display: none; font-size: 14px; line-height: 1.35; color: var(--text); }
-#objectives.collapsed { width: auto; max-width: min(360px, 46vw); padding: 8px 12px; gap: 4px; cursor: pointer; }
+#objectives.collapsed { width: auto; max-width: min(360px, calc(46vw / var(--ui))); padding: 8px 12px; gap: 4px; cursor: pointer; }
 #objectives.collapsed .tut-body { display: none; }
 #objectives.collapsed .tut-cur { display: block; }
 #objectives.pulse { animation: tutPulse 1.4s ease-out 1; }
@@ -223,7 +229,8 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .cb.on { border-color: var(--good); box-shadow: 0 0 0 1px var(--good); }
 .cb .pr { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--info); }
 .cb.empty { visibility: hidden; }
-#tooltip { position: absolute; z-index: 60; pointer-events: none; max-width: 320px; padding: 10px 12px; border-radius: 3px; font-size: 13px; line-height: 1.4; display: none; }
+#tooltip { position: absolute; z-index: 60; pointer-events: none; border-radius: 3px; font-size: 13px; line-height: 1.4; display: none; }
+#tooltip .tz { max-width: 320px; padding: 10px 12px; }
 #tooltip .tt-t { font-family: var(--f-display); font-size: 16px; color: var(--bronze-hi); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
 #tooltip .tt-t kbd { align-self: center; }
 #tooltip .cost { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0; }
@@ -272,6 +279,24 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
 .pausebadge { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); font-family: var(--f-display); font-size: 44px; color: var(--bronze-hi); text-shadow: 0 2px 12px #000; pointer-events: none; letter-spacing: .1em; }
 .confirm { display: inline-flex; gap: 6px; align-items: center; }
 
+/* ---------- display settings ---------- */
+/* interface size (Settings.uiScale): zooms the HUD, tooltips, menus and windows, never the battlefield canvas #view.
+   Lengths in vw/vh inside these elements are divided by --ui, because zoom scales them too.
+   applyDisplay() in ui.js sets --ui on body (.85 small, up to 1.2 large) and the classes ui-zoom and ui-tight. */
+body.ui-zoom :is(#topbar, #bottom, #feed, #wonderbar, #objectives, .touchbar, #tooltip .tz, #menu, #modal) { zoom: var(--ui); }
+/* a large interface on a narrow screen: the top bar drops the gatherer counts and the clock, as on phones */
+body.ui-tight #topbar .in { gap: 10px; }
+body.ui-tight .resb .g, body.ui-tight .clock { display: none; }
+/* color-blind mode (Settings.cb): good and bad become blue and magenta, and feed messages get a check or a cross */
+body.cvd { --good: #56b4e9; --bad: #ee5ca0; }
+body.cvd .msg.bad { color: #ffd8ea; }
+body.cvd .msg.good::before, body.cvd .msg.bad::before { content: ""; display: inline-block; width: 11px; height: 11px; margin-right: 6px; vertical-align: -1px; background: center / contain no-repeat; }
+body.cvd .msg.good::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.5l2.5 2.5L10 3.5' fill='none' stroke='%2356b4e9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+body.cvd .msg.bad::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 3l6 6M9 3l-6 6' fill='none' stroke='%23ee5ca0' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+body.cvd .cb.poor::after { box-shadow: inset 0 0 0 2px rgba(238, 92, 160, .8); }
+body.cvd .resb.flash { animation-name: flashCvd; }
+@keyframes flashCvd { 50% { background: rgba(238, 92, 160, .35); } }
+
 @media (max-width: 1100px) {
   #mmwrap { width: 220px; height: 110px; }
   #cmdgrid { grid-template-columns: repeat(5, 44px); grid-template-rows: repeat(3, 44px); }
@@ -289,7 +314,7 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
   .agebox { font-size: 13px; }
   #feed, #objectives { top: calc(84px + env(safe-area-inset-top, 0px)); }
   #wonderbar { top: calc(80px + env(safe-area-inset-top, 0px)); }
-  #feed { max-width: calc(100vw - 32px); }
+  #feed { max-width: calc(100vw / var(--ui) - 32px); }
   .msg { font-size: 13px; }
   #bottom .in { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; height: auto; gap: 6px; }
   #mmwrap { width: 140px; height: 70px; grid-row: 1; }
@@ -310,8 +335,8 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
   .slot .acts { justify-content: flex-start; }
   .menu-col { padding-left: max(20px, env(safe-area-inset-left, 0px)); }
   .menu-item { font-size: 19px; }
-  #objectives { width: min(300px, calc(100vw - 24px)); font-size: 13px; max-height: calc(100vh - 360px); overflow-y: auto; }
-  #objectives.collapsed { max-width: calc(100vw - 24px); }
+  #objectives { width: min(300px, calc(100vw / var(--ui) - 24px)); font-size: 13px; max-height: calc(100vh / var(--ui) - 360px); overflow-y: auto; }
+  #objectives.collapsed { max-width: calc(100vw / var(--ui) - 24px); }
   #objectives .tut-cur { font-size: 13px; }
   body.has-tut #feed { top: calc(140px + env(safe-area-inset-top, 0px)); }
   .touchbar { bottom: calc(250px + env(safe-area-inset-bottom, 0px)); }
@@ -364,6 +389,18 @@ const PCOLORS = [
   { k: 'purple', c: '#9150d0', d: '#4f2479', l: '#cba6ef' },
   { k: 'grey',   c: '#a3a3a3', d: '#575757', l: '#e0e0e0' },
   { k: 'orange', c: '#ec7f22', d: '#8a4610', l: '#f7c08f' },
+];
+// Color-blind mode (Settings.cb): the Okabe–Ito palette, which stays distinguishable with protanopia, deuteranopia
+// and tritanopia. Same order as PCOLORS, because p.color is an index stored in saves; d is c × .55, l is c + 30% white.
+const PCOLORS_CB = [
+  { k: 'blue',   c: '#0072b2', d: '#003f62', l: '#4d9cc9' },
+  { k: 'red',    c: '#d55e00', d: '#753400', l: '#e28e4d' },
+  { k: 'green',  c: '#009e73', d: '#00573f', l: '#4dbb9d' },
+  { k: 'yellow', c: '#f0e442', d: '#847d24', l: '#f5ec7b' },
+  { k: 'teal',   c: '#56b4e9', d: '#2f6380', l: '#89cbf0' },
+  { k: 'purple', c: '#cc79a7', d: '#70435c', l: '#dba1c1' },
+  { k: 'grey',   c: '#e0e0e0', d: '#7b7b7b', l: '#e9e9e9' },
+  { k: 'orange', c: '#e69f00', d: '#7f5700', l: '#eebc4d' },
 ];
 
 // Unit upgrade lines. A building trains a line; the player's current member of the line is produced.
@@ -1121,6 +1158,11 @@ addL({
   'set.hp.selected': ['Selected', 'Dipilih', 'Seleccionados', 'Sélection', 'Ausgewählt', 'Selecionados', '選択時'],
   'set.hp.damaged': ['Damaged', 'Terluka', 'Dañados', 'Blessés', 'Beschädigt', 'Feridos', '損傷時'],
   'set.hp.all': ['Always', 'Selalu', 'Siempre', 'Toujours', 'Immer', 'Sempre', '常時'],
+  'set.cb': ['Color-blind mode', 'Mode buta warna', 'Modo daltónico', 'Mode daltonien', 'Farbenblind-Modus', 'Modo daltônico', '色覚サポート'],
+  'set.ui': ['Interface size', 'Ukuran antarmuka', 'Tamaño de la interfaz', 'Taille de l’interface', 'Oberflächengröße', 'Tamanho da interface', 'UIサイズ'],
+  'set.ui.small': ['Small', 'Kecil', 'Pequeña', 'Petite', 'Klein', 'Pequena', '小'],
+  'set.ui.normal': ['Normal', 'Normal', 'Normal', 'Normale', 'Normal', 'Normal', '標準'],
+  'set.ui.large': ['Large', 'Besar', 'Grande', 'Grande', 'Groß', 'Grande', '大'],
   'set.fx': ['Visual effects', 'Efek visual', 'Efectos visuales', 'Effets visuels', 'Effekte', 'Efeitos visuais', '視覚効果'],
   'set.fx.high': ['Full', 'Penuh', 'Completos', 'Complets', 'Voll', 'Completos', '高'],
   'set.fx.low': ['Light', 'Ringan', 'Ligeros', 'Légers', 'Leicht', 'Leves', '低'],
@@ -5408,7 +5450,7 @@ const R = {
     const bar = (e, sx, sy, w) => {
       const f = clamp(e.hp / e.mhp, 0, 1);
       ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect(sx - w / 2 - 1, sy - 1, w + 2, 5);
-      ctx.fillStyle = f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'; ctx.fillRect(sx - w / 2, sy, w * f, 3);
+      ctx.fillStyle = hpColor(f); ctx.fillRect(sx - w / 2, sy, w * f, 3);
       if (e.k === 'b' && !e.built) { ctx.fillStyle = '#7ab0ff'; ctx.fillRect(sx - w / 2, sy + 3.5, w * e.prog, 2); }
     };
     for (const h of this.hits) {
@@ -5548,8 +5590,10 @@ const R = {
     ctx.strokeStyle = 'rgba(192,154,91,.6)'; ctx.lineWidth = 1;
     ctx.beginPath(); [T(0, 0), T(N, 0), T(N, N), T(0, N)].forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.stroke();
   },
+  // mx, my: pointer position in screen pixels from the minimap's top left corner. The on-screen size is used, not
+  // clientWidth, because the interface size zooms the minimap (zoom does not change clientWidth).
   miniToWorld(mc, mx, my) {
-    const N = G.N, W = mc.clientWidth, H = mc.clientHeight;
+    const r = mc.getBoundingClientRect(), N = G.N, W = r.width, H = r.height;
     const sx = W / (2 * N), sy = H / (2 * N);
     const px = (mx - W / 2) / sx, py = my / sy;
     return [(px + py) / 2, (py - px) / 2];
@@ -5869,8 +5913,34 @@ addL({
 // ============================================================
 //  UI: settings, menus, HUD, command card, input, modals
 // ============================================================
-const Settings = Object.assign({ lang: '', music: .4, sfx: .7, speed: 1.5, scroll: 1, edge: true, hpBars: 'damaged', lowFx: false, autoReseed: true }, store('eok.settings') || {});
+const Settings = Object.assign({ lang: '', music: .4, sfx: .7, speed: 1.5, scroll: 1, edge: true, hpBars: 'damaged', lowFx: false, autoReseed: true, cb: false, uiScale: 'normal' }, store('eok.settings') || {});
 function saveSettings() { store('eok.settings', Settings); }
+// Color-blind mode swaps the colors behind the player color indices (p.color is stored in saves, so the indices never
+// change) and turns the other red/green signals blue/magenta. Interface size zooms the HUD and menus through the --ui
+// CSS variable, never the battlefield canvas. Both apply at once, in the menu and during a game, and on every resize.
+const UI_SCALES = { small: .85, normal: 1, large: 1.2 };
+const PCOLORS_STD = PCOLORS.map(c => Object.assign({}, c));
+let paletteCb = false;
+function applyDisplay() {
+  const cb = !!Settings.cb;
+  if (cb !== paletteCb) {
+    paletteCb = cb;
+    PCOLORS.forEach((c, i) => Object.assign(c, (cb ? PCOLORS_CB : PCOLORS_STD)[i]));
+    Art.cache.clear(); // unit sprites, corpses and icons are cached per color index
+    UI.lastSig = ''; UI.selSig = '';
+  }
+  // above the phone layout (761–923 px, e.g. phones in landscape) Large grows only as far as the top bar still fits
+  let z = UI_SCALES[Settings.uiScale] || 1;
+  if (z > 1 && innerWidth > 760) z = Math.max(1, Math.min(z, innerWidth / 770));
+  const cl = document.body.classList;
+  cl.toggle('cvd', cb);
+  cl.toggle('ui-zoom', z !== 1);
+  cl.toggle('ui-tight', z > 1 && innerWidth > 760 && innerWidth / z < 900);
+  if (z !== 1) document.body.style.setProperty('--ui', z); else document.body.style.removeProperty('--ui');
+}
+const hpColor = f => Settings.cb ? (f > .6 ? '#56b4e9' : f > .3 ? '#f0e442' : '#ee5ca0') : (f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a');
+// order markers on the map: move and attack
+const markColor = atk => atk ? (Settings.cb ? 'rgba(238,92,160,A)' : 'rgba(255,90,70,A)') : (Settings.cb ? 'rgba(86,180,233,A)' : 'rgba(140,255,140,A)');
 
 const SVG = {
   food: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 18V7" stroke="#8a6a20" stroke-width="1.4"/><g fill="#e8bf4c" stroke="#8a6a20" stroke-width=".8"><ellipse cx="10" cy="4" rx="1.8" ry="3"/><ellipse cx="7" cy="8" rx="1.6" ry="2.8" transform="rotate(-30 7 8)"/><ellipse cx="13" cy="8" rx="1.6" ry="2.8" transform="rotate(30 13 8)"/><ellipse cx="7" cy="12" rx="1.6" ry="2.6" transform="rotate(-35 7 12)"/><ellipse cx="13" cy="12" rx="1.6" ry="2.6" transform="rotate(35 13 12)"/></g></svg>',
@@ -5961,13 +6031,14 @@ const UI = {
   init() {
     if (!Settings.lang) { const nl = (navigator.language || 'en').slice(0, 2); Settings.lang = LANGS.some(l => l[0] === nl) ? nl : 'en'; }
     setLang(Settings.lang);
+    applyDisplay();
     this.speed = Settings.speed;
     const cv = $('view');
     R.init(cv);
     this.buildCmdGrid();
     this.bindInput(cv);
     this.bindMinimap($('minimap'));
-    window.addEventListener('resize', () => R.resize());
+    window.addEventListener('resize', () => { R.resize(); applyDisplay(); });
     $('tooltip').style.display = 'none';
     const sp = $('selpanel'), release = () => setTimeout(() => { this.panelHold = false; }, 0);
     sp.addEventListener('pointerdown', () => { this.panelHold = true; });
@@ -6130,6 +6201,8 @@ const UI = {
       <div class="set-row"><span>${t('set.scroll')}</span><input type="range" min=".4" max="2.5" step=".1" data-k="scroll" value="${Settings.scroll}"></div>
       <div class="set-row"><span>${t('set.edge')}</span>${seg('edge', [true, false], [t('set.on'), t('set.off')])}</div>
       <div class="set-row"><span>${t('set.hp')}</span>${seg('hpBars', ['selected', 'damaged', 'all'], [t('set.hp.selected'), t('set.hp.damaged'), t('set.hp.all')])}</div>
+      <div class="set-row"><span>${t('set.cb')}</span>${seg('cb', [true, false], [t('set.on'), t('set.off')])}</div>
+      <div class="set-row"><span>${t('set.ui')}</span>${seg('uiScale', ['small', 'normal', 'large'], [t('set.ui.small'), t('set.ui.normal'), t('set.ui.large')])}</div>
       <div class="set-row"><span>${t('set.fx')}</span>${seg('lowFx', [false, true], [t('set.fx.high'), t('set.fx.low')])}</div>
       <div class="set-row"><span>${t('set.reseed')}</span>${seg('autoReseed', [true, false], [t('set.on'), t('set.off')])}</div>
       <div class="set-row"><span>${t('set.fullscreen')}</span><div><button class="btn small" data-a="fs">${t('set.fullscreen')}</button></div></div>
@@ -6145,6 +6218,7 @@ const UI = {
         Settings[k] = v; saveSettings(); Audio2.sfx('click');
         if (k === 'speed' && !inGame) this.speed = v;
         if (k === 'autoReseed' && G && G.human >= 0) G.players[G.human].autoReseed = v;
+        if (k === 'cb' || k === 'uiScale') applyDisplay();
         this.showSettings(inGame);
       }
       if (el.dataset.a === 'fs') { const d = document.documentElement; try { (document.fullscreenElement ? document.exitFullscreen() : d.requestFullscreen()).catch(() => { }); } catch (err) { } }
@@ -6321,7 +6395,7 @@ const UI = {
     if (!this.sel.length) { set(`<div class="sinfo"><div class="sub">${t('hud.nothing')}</div></div>`); return; }
     const ents = this.sel.map(byId);
     if (ents.length === 1) { set(this.infoHTML(ents[0])); return; }
-    set(`<div class="multi">${ents.slice(0, 60).map(e => { const f = e.hp / e.mhp; return `<button class="mu" data-id="${e.id}" title="${esc(nameOf(e.type))}" aria-label="${esc(nameOf(e.type))}"><img src="${this.iconFor(e)}" alt=""><i style="width:${(f * 100).toFixed(0)}%;background:${f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'}"></i></button>`; }).join('')}</div>`);
+    set(`<div class="multi">${ents.slice(0, 60).map(e => { const f = e.hp / e.mhp; return `<button class="mu" data-id="${e.id}" title="${esc(nameOf(e.type))}" aria-label="${esc(nameOf(e.type))}"><img src="${this.iconFor(e)}" alt=""><i style="width:${(f * 100).toFixed(0)}%;background:${hpColor(f)}"></i></button>`; }).join('')}</div>`);
   },
   // clicks in the selection panel: queue icons cancel, unit icons narrow the selection
   selPanelClick(e) {
@@ -6360,7 +6434,7 @@ const UI = {
     const f = clamp(e.hp / e.mhp, 0, 1);
     h += `<div class="nm">${esc(nameOf(e.type))}</div>`;
     h += `<div class="sub">${p ? `<span class="pdot" style="background:${pcol(e.owner)}"></span>${esc(pname(e.owner))} · ${civName(p.civ)}` : t('ui.gaia')}</div>`;
-    h += `<div class="hpbar"><i style="width:${(f * 100).toFixed(1)}%;background:${f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a'}"></i></div>`;
+    h += `<div class="hpbar"><i style="width:${(f * 100).toFixed(1)}%;background:${hpColor(f)}"></i></div>`;
     const st = [];
     st.push(`<span title="${t('stat.hp')}">♥ <b class="num">${Math.ceil(e.hp)}/${e.mhp}</b></span>`);
     if (s.atk) st.push(`<span title="${t('stat.atk')}">${SVG.atk}<b class="num">${s.atk}</b>${s.shots > 1 ? '×' + s.shots : ''}</span>`);
@@ -6558,11 +6632,13 @@ const UI = {
   },
   showTip(el, html) {
     const tip = $('tooltip');
-    tip.innerHTML = html; tip.style.display = 'block';
+    // only the inner box is zoomed by the interface size, so the tooltip itself is placed in plain screen pixels
+    tip.innerHTML = `<div class="tz">${html}</div>`; tip.style.display = 'block';
     const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
     let x = r.left + r.width / 2 - tw / 2, y = r.top - th - 8;
     if (y < 8) y = r.bottom + 8;
     x = clamp(x, 8, window.innerWidth - tw - 8);
+    y = clamp(y, 8, window.innerHeight - th - 8); // fits neither above nor below: keep it on screen
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   },
   hideTip() { clearTimeout(this.tipT); $('tooltip').style.display = 'none'; },
@@ -6627,7 +6703,7 @@ const UI = {
       if (this.mode && this.mode !== 'place') { this.applyMode(wx, wy, tgt, shift); return; }
       const hostileT = tgt && tgt.owner >= 0 && isEnemy(G.human, tgt.owner);
       Cmd.smart(units, wx, wy, tgt, { shift, alt });
-      R.marks.push({ x: tgt ? tgt.x + (tgt.w || 0) / 2 : wx, y: tgt ? tgt.y + (tgt.h || 0) / 2 : wy, t: R.t, col: hostileT ? 'rgba(255,90,70,A)' : tgt && tgt.k === 'r' ? 'rgba(255,220,100,A)' : 'rgba(140,255,140,A)' });
+      R.marks.push({ x: tgt ? tgt.x + (tgt.w || 0) / 2 : wx, y: tgt ? tgt.y + (tgt.h || 0) / 2 : wy, t: R.t, col: hostileT ? markColor(true) : tgt && tgt.k === 'r' ? 'rgba(255,220,100,A)' : markColor(false) });
       Audio2.ack(units[0], hostileT);
       return;
     }
@@ -6640,9 +6716,9 @@ const UI = {
   applyMode(wx, wy, tgt, shift) {
     const units = this.myUnits();
     const m = this.mode;
-    if (m === 'amove') { Cmd.move(units, wx, wy, { amove: true, shift }); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(255,90,70,A)' }); Audio2.ack(units[0], true); }
+    if (m === 'amove') { Cmd.move(units, wx, wy, { amove: true, shift }); R.marks.push({ x: wx, y: wy, t: R.t, col: markColor(true) }); Audio2.ack(units[0], true); }
     else if (m === 'patrol') { Cmd.patrol(units, wx, wy); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(255,220,100,A)' }); Audio2.ack(units[0], false); }
-    else if (m === 'ground') { Cmd.ground(units, wx, wy); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(255,90,70,A)' }); }
+    else if (m === 'ground') { Cmd.ground(units, wx, wy); R.marks.push({ x: wx, y: wy, t: R.t, col: markColor(true) }); }
     else if (m === 'garrison') { if (tgt && tgt.k === 'b' && tgt.owner === G.human) { if (tgt.type === 'monastery') Cmd.smart(units, wx, wy, tgt, {}); else Cmd.garrison(units, tgt); Audio2.ack(units[0], false); } }
     else if (m === 'repair') { if (tgt && tgt.k === 'b' && allied(tgt.owner, G.human)) Cmd.build(units.filter(isVil), tgt, shift); }
     else if (m === 'rally') { for (const b of this.myBlds()) Cmd.rally(b, wx, wy, tgt && tgt !== b ? tgt.id : 0); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(240,230,190,A)' }); }
@@ -6835,7 +6911,7 @@ const UI = {
       if (wx < 0 || wy < 0 || wx > G.N || wy > G.N) return;
       if (right) {
         const units = this.myUnits();
-        if (units.length) { Cmd.move(units, wx, wy, { shift: e.shiftKey, amove: this.mode === 'amove' }); this.cancelMode(); Audio2.ack(units[0], false); R.marks.push({ x: wx, y: wy, t: R.t, col: 'rgba(140,255,140,A)' }); }
+        if (units.length) { Cmd.move(units, wx, wy, { shift: e.shiftKey, amove: this.mode === 'amove' }); this.cancelMode(); Audio2.ack(units[0], false); R.marks.push({ x: wx, y: wy, t: R.t, col: markColor(false) }); }
         else for (const b of this.myBlds()) Cmd.rally(b, wx, wy, 0);
       } else R.centerOn(wx, wy);
     };
@@ -6906,6 +6982,9 @@ const UI = {
     const f = $('feed');
     f.appendChild(el);
     while (f.children.length > 6) f.firstChild.remove();
+    // on short screens (or a large interface) drop the oldest messages until the newest is above the bottom panel
+    const lim = $('bottom').getBoundingClientRect().top;
+    while (f.children.length > 1 && el.getBoundingClientRect().bottom > lim) f.firstChild.remove();
     setTimeout(() => el.classList.add('fade'), 7000);
     setTimeout(() => el.remove(), 8000);
   },

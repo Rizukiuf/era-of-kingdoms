@@ -27,6 +27,7 @@
   --f-cjk: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
   --kawung: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23c39a5c' stroke-opacity='.10' stroke-width='1'%3E%3Cellipse cx='24' cy='12' rx='6' ry='10'/%3E%3Cellipse cx='24' cy='36' rx='6' ry='10'/%3E%3Cellipse cx='12' cy='24' rx='10' ry='6'/%3E%3Cellipse cx='36' cy='24' rx='10' ry='6'/%3E%3Ccircle cx='24' cy='24' r='2'/%3E%3Ccircle cx='0' cy='0' r='2'/%3E%3Ccircle cx='48' cy='0' r='2'/%3E%3Ccircle cx='0' cy='48' r='2'/%3E%3Ccircle cx='48' cy='48' r='2'/%3E%3C/g%3E%3C/svg%3E");
   color-scheme: dark;
+  --ui: 1;                   /* interface size, see "display settings" below */
 }
 html, body { height: 100%; }
 body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--f-body); font-size: 15px; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -59,7 +60,12 @@ label.field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; display: flex; z-index: 20; }
 #menu { background: linear-gradient(90deg, rgba(7, 10, 18, .92) 0%, rgba(7, 10, 18, .72) 34%, rgba(7, 10, 18, .1) 70%, rgba(7, 10, 18, .35) 100%); }
-.menu-col { width: min(440px, 100%); display: flex; flex-direction: column; justify-content: center; gap: 28px; padding-block: 32px; padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.menu-col { width: min(440px, 100%); display: flex; flex-direction: column; gap: 28px; overflow-y: auto; scrollbar-width: none; padding-block: 32px; padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+/* centered when it fits, scrollable from the top when it does not (short phone screens, large interface size);
+   the scroll bar stays hidden, wheel and touch scroll it */
+.menu-col::-webkit-scrollbar { display: none; }
+.menu-col > :first-child { margin-top: auto; }
+.menu-col > :last-child { margin-bottom: auto; }
 .brand .eyebrow { margin-bottom: 10px; }
 .brand h1 { font-size: clamp(40px, 6vw, 64px); line-height: .95; color: var(--bronze-hi); text-shadow: 0 2px 0 #3a2410, 0 0 30px rgba(195, 154, 92, .25); }
 .brand p { margin: 12px 0 0; color: var(--muted); max-width: 34ch; line-height: 1.45; }
@@ -145,14 +151,14 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .tbtn svg { width: 18px; height: 18px; }
 .tbtn > *, .resb > *, .cb > *, #selpanel button > * { pointer-events: none; }
 .tbtn .cnt { font-weight: 700; color: var(--warn); }
-#feed { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; max-width: min(520px, 70vw); pointer-events: none; }
+#feed { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; max-width: min(520px, calc(70vw / var(--ui))); pointer-events: none; }
 .msg { font-size: 14px; padding: 4px 10px; background: rgba(8, 11, 20, .72); border-left: 3px solid var(--bronze); border-radius: 2px; color: var(--text); text-shadow: 0 1px 2px #000; animation: msgIn .25s ease-out; }
 .msg.bad { border-left-color: var(--bad); color: #ffd9d2; }
 .msg.good { border-left-color: var(--good); }
 .msg.info { border-left-color: var(--info); }
 .msg.fade { opacity: 0; transition: opacity .8s; }
 @keyframes msgIn { from { transform: translateX(-8px); opacity: 0; } }
-#objectives { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); width: min(320px, 46vw); padding: 12px 14px; border-radius: 3px; display: grid; gap: 8px; }
+#objectives { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(52px + env(safe-area-inset-top, 0px)); width: min(320px, calc(46vw / var(--ui))); padding: 12px 14px; border-radius: 3px; display: grid; gap: 8px; }
 #objectives h3 { font-size: 16px; color: var(--bronze-hi); }
 #objectives .obj { display: grid; grid-template-columns: 18px 1fr; gap: 6px; font-size: 14px; line-height: 1.35; }
 #objectives .obj.done { color: var(--muted); text-decoration: line-through; }
@@ -162,7 +168,7 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .tut-tog { appearance: none; border: 1px solid var(--line); background: rgba(10, 14, 28, .6); color: var(--muted); font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 3px; cursor: pointer; white-space: nowrap; flex: none; }
 .tut-tog:hover { color: var(--text); border-color: var(--bronze); }
 #objectives .tut-cur { display: none; font-size: 14px; line-height: 1.35; color: var(--text); }
-#objectives.collapsed { width: auto; max-width: min(360px, 46vw); padding: 8px 12px; gap: 4px; cursor: pointer; }
+#objectives.collapsed { width: auto; max-width: min(360px, calc(46vw / var(--ui))); padding: 8px 12px; gap: 4px; cursor: pointer; }
 #objectives.collapsed .tut-body { display: none; }
 #objectives.collapsed .tut-cur { display: block; }
 #objectives.pulse { animation: tutPulse 1.4s ease-out 1; }
@@ -209,7 +215,8 @@ kbd { font-family: var(--f-body); font-size: 12px; background: #0f1528; border: 
 .cb.on { border-color: var(--good); box-shadow: 0 0 0 1px var(--good); }
 .cb .pr { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--info); }
 .cb.empty { visibility: hidden; }
-#tooltip { position: absolute; z-index: 60; pointer-events: none; max-width: 320px; padding: 10px 12px; border-radius: 3px; font-size: 13px; line-height: 1.4; display: none; }
+#tooltip { position: absolute; z-index: 60; pointer-events: none; border-radius: 3px; font-size: 13px; line-height: 1.4; display: none; }
+#tooltip .tz { max-width: 320px; padding: 10px 12px; }
 #tooltip .tt-t { font-family: var(--f-display); font-size: 16px; color: var(--bronze-hi); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
 #tooltip .tt-t kbd { align-self: center; }
 #tooltip .cost { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0; }
@@ -258,6 +265,24 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
 .pausebadge { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); font-family: var(--f-display); font-size: 44px; color: var(--bronze-hi); text-shadow: 0 2px 12px #000; pointer-events: none; letter-spacing: .1em; }
 .confirm { display: inline-flex; gap: 6px; align-items: center; }
 
+/* ---------- display settings ---------- */
+/* interface size (Settings.uiScale): zooms the HUD, tooltips, menus and windows, never the battlefield canvas #view.
+   Lengths in vw/vh inside these elements are divided by --ui, because zoom scales them too.
+   applyDisplay() in ui.js sets --ui on body (.85 small, up to 1.2 large) and the classes ui-zoom and ui-tight. */
+body.ui-zoom :is(#topbar, #bottom, #feed, #wonderbar, #objectives, .touchbar, #tooltip .tz, #menu, #modal) { zoom: var(--ui); }
+/* a large interface on a narrow screen: the top bar drops the gatherer counts and the clock, as on phones */
+body.ui-tight #topbar .in { gap: 10px; }
+body.ui-tight .resb .g, body.ui-tight .clock { display: none; }
+/* color-blind mode (Settings.cb): good and bad become blue and magenta, and feed messages get a check or a cross */
+body.cvd { --good: #56b4e9; --bad: #ee5ca0; }
+body.cvd .msg.bad { color: #ffd8ea; }
+body.cvd .msg.good::before, body.cvd .msg.bad::before { content: ""; display: inline-block; width: 11px; height: 11px; margin-right: 6px; vertical-align: -1px; background: center / contain no-repeat; }
+body.cvd .msg.good::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.5l2.5 2.5L10 3.5' fill='none' stroke='%2356b4e9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+body.cvd .msg.bad::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 3l6 6M9 3l-6 6' fill='none' stroke='%23ee5ca0' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+body.cvd .cb.poor::after { box-shadow: inset 0 0 0 2px rgba(238, 92, 160, .8); }
+body.cvd .resb.flash { animation-name: flashCvd; }
+@keyframes flashCvd { 50% { background: rgba(238, 92, 160, .35); } }
+
 @media (max-width: 1100px) {
   #mmwrap { width: 220px; height: 110px; }
   #cmdgrid { grid-template-columns: repeat(5, 44px); grid-template-rows: repeat(3, 44px); }
@@ -275,7 +300,7 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
   .agebox { font-size: 13px; }
   #feed, #objectives { top: calc(84px + env(safe-area-inset-top, 0px)); }
   #wonderbar { top: calc(80px + env(safe-area-inset-top, 0px)); }
-  #feed { max-width: calc(100vw - 32px); }
+  #feed { max-width: calc(100vw / var(--ui) - 32px); }
   .msg { font-size: 13px; }
   #bottom .in { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; height: auto; gap: 6px; }
   #mmwrap { width: 140px; height: 70px; grid-row: 1; }
@@ -296,8 +321,8 @@ canvas.chart { width: 100%; height: 280px; display: block; background: rgba(10, 
   .slot .acts { justify-content: flex-start; }
   .menu-col { padding-left: max(20px, env(safe-area-inset-left, 0px)); }
   .menu-item { font-size: 19px; }
-  #objectives { width: min(300px, calc(100vw - 24px)); font-size: 13px; max-height: calc(100vh - 360px); overflow-y: auto; }
-  #objectives.collapsed { max-width: calc(100vw - 24px); }
+  #objectives { width: min(300px, calc(100vw / var(--ui) - 24px)); font-size: 13px; max-height: calc(100vh / var(--ui) - 360px); overflow-y: auto; }
+  #objectives.collapsed { max-width: calc(100vw / var(--ui) - 24px); }
   #objectives .tut-cur { font-size: 13px; }
   body.has-tut #feed { top: calc(140px + env(safe-area-inset-top, 0px)); }
   .touchbar { bottom: calc(250px + env(safe-area-inset-bottom, 0px)); }

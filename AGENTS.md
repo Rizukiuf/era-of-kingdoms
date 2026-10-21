@@ -10,8 +10,8 @@ and write the few small files that make the game an installable app with offline
 
 ## Project status
 
-- Version 1.0.0, playable at https://rizukiuf.github.io/era-of-kingdoms/ (GitHub Pages serves `index.html` and the app files on `main`).
-  The `v1.0.0` tag and release are not created yet.
+- Version 1.0.0, released on 2026-10-21 (tag `v1.0.0` and a GitHub release). Playable at
+  https://rizukiuf.github.io/era-of-kingdoms/ (GitHub Pages serves `index.html` and the app files on `main`).
 - What has been done and fixed so far: `CHANGELOG.md`. Add an entry there for every user-visible change.
 - What could come next: "Known gaps" at the end of this file and README section 10.
 - The maintainer (Rizki) plays the game, reports bugs, reviews and merges pull requests. He prefers replies in
@@ -86,8 +86,12 @@ compact functions.
 - New unit, technology, civilization, language or map: follow README section 7 (Adding content).
 - Documentation, comments, commit messages and PR descriptions are written in English. Player-visible text is translated (rule 3).
 - Visual change: `art_units.js` / `art_bld.js`. Sprites are cached by key; include every parameter that changes
-  the drawing in the cache key.
-- HUD or menu change: `ui.js` plus CSS in `shell.html`. Check the 760 px mobile breakpoint.
+  the drawing in the cache key. Player colors come from `PCOLORS[p.color]`, whose values the color-blind mode
+  swaps in place (`applyDisplay()` in `ui.js`, which then clears `Art.cache`); never cache a color value elsewhere.
+  Use `hpColor()` for health and the CSS variables `--good` / `--bad` for good and bad signals.
+- HUD or menu change: `ui.js` plus CSS in `shell.html`. Check the 760 px mobile breakpoint and the Large interface
+  size. The interface size zooms the HUD and menus with CSS `zoom` (`--ui`): measure positions with
+  `getBoundingClientRect()`, not `clientWidth` / `offsetWidth`, and divide `vw` / `vh` lengths inside them by `--ui`.
 
 ## Definition of done for a pull request
 
