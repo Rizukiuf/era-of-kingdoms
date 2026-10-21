@@ -15,7 +15,9 @@ labels: enhancement
 - [ ] ...
 - [ ] New text is available in all 7 languages
 - [ ] `node tools/sim-test.mjs 30` passes
-- [ ] `index.html` is rebuilt and committed
+- [ ] For balance or AI changes: `node tools/balance-report.mjs` before and after, pasted in the PR
+- [ ] `node build.mjs` run and the built files (`index.html`, `sw.js`, …) committed
+- [ ] CHANGELOG entry for a change players will notice
 
 ## Limits / what must not change
 <!-- Example: "Old saves must still load", "No new libraries". -->

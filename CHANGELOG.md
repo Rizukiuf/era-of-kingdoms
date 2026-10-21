@@ -54,6 +54,9 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 - Browser smoke test: the farm check no longer fails in about one run out of ten. The test pauses the game at a
   moment that depends on timing, and now and then a villager walking across the new field stood on the point it
   clicked; it now clicks a point of the farm that nothing covers.
+- Documentation: README section 10 and AGENTS.md list the known gaps with their issues and point to the Roadmap
+  (#17). The feature issue template names all built files, the changelog and the balance report; bug reports ask
+  for the game version, how the game was opened and the display settings.
 
 ## [1.0.0] — 2026-10-21
 
