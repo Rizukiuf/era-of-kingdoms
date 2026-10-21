@@ -1094,7 +1094,7 @@ addL({
   'pm.confirmReplace': ['Replace?', 'Timpa?', '¿Reemplazar?', 'Remplacer ?', 'Ersetzen?', 'Substituir?', '上書き？'],
   'pm.importOk': ['Game imported into slot {n}.', 'Permainan diimpor ke slot {n}.', 'Partida importada en la ranura {n}.', 'Partie importée dans l’emplacement {n}.', 'Spiel in Platz {n} importiert.', 'Jogo importado para o espaço {n}.', 'スロット{n}にインポートしました。'],
   'pm.importBad': ['This file is not an Era of Kingdoms save.', 'File ini bukan simpanan Era of Kingdoms.', 'Este archivo no es una partida guardada de Era of Kingdoms.', 'Ce fichier n’est pas une sauvegarde d’Era of Kingdoms.', 'Diese Datei ist kein Spielstand von Era of Kingdoms.', 'Este arquivo não é um jogo salvo de Era of Kingdoms.', 'このファイルはEra of Kingdomsのセーブデータではありません。'],
-  'pm.importNewer': ['This save was made by a newer version of the game ({v}). Update the game to load it.', 'Simpanan ini dibuat oleh versi permainan yang lebih baru ({v}). Perbarui permainan untuk memuatnya.', 'Esta partida se guardó con una versión más reciente del juego ({v}). Actualiza el juego para cargarla.', 'Cette sauvegarde vient d’une version plus récente du jeu ({v}). Mettez le jeu à jour pour la charger.', 'Dieser Spielstand stammt aus einer neueren Version des Spiels ({v}). Aktualisiere das Spiel, um ihn zu laden.', 'Este jogo foi salvo em uma versão mais recente do jogo ({v}). Atualize o jogo para carregá-lo.', 'このセーブデータは新しいバージョン（{v}）で作成されました。読み込むにはゲームを更新してください。'],
+  'pm.importNewer': ['This save was made by a newer version of the game ({v}). Update the game to load it.', 'Simpanan ini dibuat oleh versi permainan yang lebih baru ({v}). Perbarui permainan untuk memuatnya.', 'Esta partida se guardó con una versión más reciente del juego ({v}). Actualiza el juego para cargarla.', 'Cette sauvegarde vient d’une version plus récente du jeu ({v}). Mettez le jeu à jour pour la charger.', 'Dieser Spielstand stammt aus einer neueren Version des Spiels ({v}). Aktualisiere das Spiel, um ihn zu laden.', 'Este jogo salvo vem de uma versão mais recente ({v}). Atualize o jogo para carregá-lo.', 'このセーブデータは新しいバージョン（{v}）で作成されました。読み込むにはゲームを更新してください。'],
   'pm.importDamaged': ['This save file is damaged or incomplete.', 'File simpanan ini rusak atau tidak lengkap.', 'Este archivo de guardado está dañado o incompleto.', 'Ce fichier de sauvegarde est endommagé ou incomplet.', 'Diese Speicherdatei ist beschädigt oder unvollständig.', 'Este arquivo de jogo salvo está danificado ou incompleto.', 'このセーブファイルは破損しているか、不完全です。'],
   'pm.restart': ['Restart', 'Mulai ulang', 'Reiniciar', 'Recommencer', 'Neustart', 'Reiniciar', 'リスタート'],
   'pm.confirmRestart': ['Restart — click again to confirm', 'Mulai ulang — klik lagi untuk konfirmasi', 'Reiniciar: vuelve a pulsar', 'Recommencer : cliquez encore', 'Neustart – erneut klicken', 'Reiniciar: clique de novo', 'もう一度クリックでリスタート'],
@@ -6141,7 +6141,7 @@ const UI = {
     if (this.screen === 'menu') this.showMenu();
     if (this.screen === 'game') { this.buildTopbar(); this.lastSig = ''; this.selSig = ''; this.updateObjectives(true); }
   },
-  // note: text for the line under the slots; imp: { save, name } of a checked file waiting for a target slot
+  // note: text for the line under the slots; imp: { save, date, name } of a checked file waiting for a target slot
   showLoad(inGame, note, imp) {
     const slots = ['auto', '1', '2', '3'];
     const info = m => [civName(m.civ), t('map.' + m.map), ageName(m.age), fmtTime(m.time)].concat(m.date ? [new Date(m.date).toLocaleString(Settings.lang)] : []).join(' · ');
@@ -6152,7 +6152,7 @@ const UI = {
       return `<div class="slot"><div><b>${s === 'auto' ? t('pm.auto') : t('pm.slot', { n: s })}</b><div class="muted small">${m ? esc(info(m)) : t('pm.empty')}</div></div>
       <div class="acts">${acts(s, m)}</div></div>`;
     };
-    const file = imp ? `<div class="slot import"><div><b>${esc(imp.name)}</b><div class="muted small">${esc(info(Object.assign(saveMeta(imp.save), { date: 0 })))}</div></div></div>` : '';
+    const file = imp ? `<div class="slot import"><div><b>${esc(imp.name)}</b><div class="muted small">${esc(info(saveMeta(imp.save, imp.date)))}</div></div></div>` : '';
     const foot = imp ? `<button class="btn ghost" data-a="importCancel">${t('setup.back')}</button>`
       : `<button class="btn" data-a="import">${t('pm.import')}</button><input type="file" accept=".json,application/json" data-a="importFile" hidden>`;
     this.modal(`${this.head(inGame ? t('pm.saveload') : t('menu.load'))}<div class="sheet-body">${file}<div class="slots">${slots.map(row).join('')}</div><p class="muted small" id="loadNote" aria-live="polite"></p></div><div class="sheet-foot">${foot}</div>`, (e, el) => {
@@ -6172,13 +6172,13 @@ const UI = {
         (f.size > 32e6 ? Promise.resolve('') : f.text()).then(text => {
           if ($('loadNote') !== open) return; // the window was closed or changed meanwhile
           const r = readSaveFile(text);
-          if (r.save) this.showLoad(inGame, t('pm.importPick'), { save: r.save, name: f.name });
+          if (r.save) this.showLoad(inGame, t('pm.importPick'), { save: r.save, date: r.date, name: f.name });
           else this.showLoad(inGame, t('pm.' + r.err, { v: r.ver }));
         }, () => { if ($('loadNote') === open) this.showLoad(inGame, t('pm.importDamaged')); });
       }
       else if (a === 'importTo') {
         if (store('eok.meta.' + s) && !el.dataset.c) { el.dataset.c = '1'; el.textContent = t('pm.confirmReplace'); return; }
-        const ok = importSave(imp.save, s);
+        const ok = importSave(imp.save, s, imp.date);
         this.showLoad(inGame, ok ? t('pm.importOk', { n: s }) : t('pm.saveFail'), ok ? null : imp);
       }
       else if (a === 'importCancel') this.showLoad(inGame);
@@ -7531,7 +7531,7 @@ function restoreGame(d) {
   return d.cam;
 }
 // slot list entry (eok.meta.<slot>); works on G and on a parsed save
-function saveMeta(g) { const p = g.players[g.human]; return { civ: p.civ, map: g.mapType, age: p.age, time: g.time, date: Date.now() }; }
+function saveMeta(g, date) { const p = g.players[g.human]; return { civ: p.civ, map: g.mapType, age: p.age, time: g.time, date: date || Date.now() }; }
 function saveGame(slot) {
   if (!G || G.cfg.attract) return false;
   try {
@@ -7566,9 +7566,8 @@ function loadGame(slot) {
 const SAVE_FORMAT = 'era-of-kingdoms-save', SAVE_VERSION = 1;
 function exportSave(slot) {
   try {
-    const d = JSON.parse(localStorage.getItem('eok.save.' + slot));
-    const text = JSON.stringify({ format: SAVE_FORMAT, saveVersion: d.v, gameVersion: GAME_VERSION, save: d });
-    const now = new Date(), p = n => (n < 10 ? '0' : '') + n;
+    const d = JSON.parse(localStorage.getItem('eok.save.' + slot)), now = new Date(), p = n => (n < 10 ? '0' : '') + n;
+    const text = JSON.stringify({ format: SAVE_FORMAT, saveVersion: d.v, gameVersion: GAME_VERSION, exportedAt: now.getTime(), save: d });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     a.download = `era-of-kingdoms-${slot}-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}.json`;
@@ -7577,7 +7576,8 @@ function exportSave(slot) {
     return true;
   } catch (e) { console.error(e); return false; }
 }
-// Returns { save } or { err: i18n key suffix, ver }.
+// Returns { save, date } or { err: i18n key suffix, ver }. The export time becomes the slot date;
+// a file without a usable one gets the time of the import.
 function readSaveFile(text) {
   let f = null;
   try { f = JSON.parse(text); } catch (e) { }
@@ -7585,7 +7585,8 @@ function readSaveFile(text) {
   if (!f || f.format !== SAVE_FORMAT) return { err: /^\s*\{\s*"format"\s*:\s*"era-of-kingdoms-save"/.test(text) ? 'importDamaged' : 'importBad' };
   const d = f.save, newer = v => Number.isInteger(v) && v > SAVE_VERSION;
   if (newer(f.saveVersion) || newer(d && d.v)) return { err: 'importNewer', ver: String(f.gameVersion || '?').slice(0, 20) };
-  try { if (f.saveVersion === d.v && saveOk(d)) return { save: d }; } catch (e) { }
+  const date = Number.isInteger(f.exportedAt) && f.exportedAt > 0 && f.exportedAt <= 8.64e15 ? f.exportedAt : 0;
+  try { if (f.saveVersion === d.v && saveOk(d)) return { save: d, date }; } catch (e) { }
   return { err: 'importDamaged' };
 }
 // Every string in a save is an id (unit, building, tech, order, map type…), a base64 grid or a player name.
@@ -7617,11 +7618,11 @@ function saveOk(d) {
     && Object.keys(d).every(k => k !== '__proto__' && (k === 'terrain' || k === 'vis' || saveStringsOk(d[k], k)));
 }
 // Writes a checked save into a slot; on failure (storage full) the slot keeps what it had.
-function importSave(d, slot) {
+function importSave(d, slot, date) {
   const k = 'eok.save.' + slot;
   let old = null;
   try { old = localStorage.getItem(k); } catch (e) { return false; }
-  try { localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem('eok.meta.' + slot, JSON.stringify(saveMeta(d))); return true; }
+  try { localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem('eok.meta.' + slot, JSON.stringify(saveMeta(d, date))); return true; }
   catch (e) { try { if (old == null) localStorage.removeItem(k); else localStorage.setItem(k, old); } catch (e2) { } return false; }
 }
 

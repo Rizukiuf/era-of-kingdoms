@@ -283,7 +283,7 @@ const UI = {
     if (this.screen === 'menu') this.showMenu();
     if (this.screen === 'game') { this.buildTopbar(); this.lastSig = ''; this.selSig = ''; this.updateObjectives(true); }
   },
-  // note: text for the line under the slots; imp: { save, name } of a checked file waiting for a target slot
+  // note: text for the line under the slots; imp: { save, date, name } of a checked file waiting for a target slot
   showLoad(inGame, note, imp) {
     const slots = ['auto', '1', '2', '3'];
     const info = m => [civName(m.civ), t('map.' + m.map), ageName(m.age), fmtTime(m.time)].concat(m.date ? [new Date(m.date).toLocaleString(Settings.lang)] : []).join(' · ');
@@ -294,7 +294,7 @@ const UI = {
       return `<div class="slot"><div><b>${s === 'auto' ? t('pm.auto') : t('pm.slot', { n: s })}</b><div class="muted small">${m ? esc(info(m)) : t('pm.empty')}</div></div>
       <div class="acts">${acts(s, m)}</div></div>`;
     };
-    const file = imp ? `<div class="slot import"><div><b>${esc(imp.name)}</b><div class="muted small">${esc(info(Object.assign(saveMeta(imp.save), { date: 0 })))}</div></div></div>` : '';
+    const file = imp ? `<div class="slot import"><div><b>${esc(imp.name)}</b><div class="muted small">${esc(info(saveMeta(imp.save, imp.date)))}</div></div></div>` : '';
     const foot = imp ? `<button class="btn ghost" data-a="importCancel">${t('setup.back')}</button>`
       : `<button class="btn" data-a="import">${t('pm.import')}</button><input type="file" accept=".json,application/json" data-a="importFile" hidden>`;
     this.modal(`${this.head(inGame ? t('pm.saveload') : t('menu.load'))}<div class="sheet-body">${file}<div class="slots">${slots.map(row).join('')}</div><p class="muted small" id="loadNote" aria-live="polite"></p></div><div class="sheet-foot">${foot}</div>`, (e, el) => {
@@ -314,13 +314,13 @@ const UI = {
         (f.size > 32e6 ? Promise.resolve('') : f.text()).then(text => {
           if ($('loadNote') !== open) return; // the window was closed or changed meanwhile
           const r = readSaveFile(text);
-          if (r.save) this.showLoad(inGame, t('pm.importPick'), { save: r.save, name: f.name });
+          if (r.save) this.showLoad(inGame, t('pm.importPick'), { save: r.save, date: r.date, name: f.name });
           else this.showLoad(inGame, t('pm.' + r.err, { v: r.ver }));
         }, () => { if ($('loadNote') === open) this.showLoad(inGame, t('pm.importDamaged')); });
       }
       else if (a === 'importTo') {
         if (store('eok.meta.' + s) && !el.dataset.c) { el.dataset.c = '1'; el.textContent = t('pm.confirmReplace'); return; }
-        const ok = importSave(imp.save, s);
+        const ok = importSave(imp.save, s, imp.date);
         this.showLoad(inGame, ok ? t('pm.importOk', { n: s }) : t('pm.saveFail'), ok ? null : imp);
       }
       else if (a === 'importCancel') this.showLoad(inGame);

@@ -209,7 +209,7 @@ try {
   const version = await page.evaluate(() => GAME_VERSION);
   check('Export downloads a save slot as a .json file',
     !!exp && /^era-of-kingdoms-1-\d{4}-\d\d-\d\d-\d{4}\.json$/.test(exp.name) && exp.f.format === 'era-of-kingdoms-save' && exp.f.saveVersion === 1
-      && exp.f.gameVersion === version && JSON.stringify(exp.f.save) === slot1[0],
+      && exp.f.gameVersion === version && Math.abs(exp.f.exportedAt - Date.now()) < 10 * 60e3 && JSON.stringify(exp.f.save) === slot1[0],
     exp ? `${exp.name}, ${Math.round(exp.text.length / 1024)} KB` : 'no download');
 
   //   broken files are refused with a reason, and no slot changes
@@ -250,7 +250,7 @@ try {
       await page.click('#modal [data-a="load"][data-s="2"]');
       await page.waitForFunction(() => UI.screen === 'game' && window.__restored, null, { timeout: 30000 });
       const back = await page.evaluate(() => window.__restored);
-      imp = { askFirst, done, slot1Empty: s1[0] === null, slot2IsFile: s2[0] === slot1[0], meta: !!meta && meta.time === game.time, sameGame: JSON.stringify(back) === JSON.stringify(game) };
+      imp = { askFirst, done, slot1Empty: s1[0] === null, slot2IsFile: s2[0] === slot1[0], meta: !!meta && meta.time === game.time && meta.date === exp.f.exportedAt, sameGame: JSON.stringify(back) === JSON.stringify(game) };
     } catch (e) { imp = (e && e.message || String(e)).split('\n')[0]; }
   }
   check('export → delete → import into another slot → load gives the same game',
