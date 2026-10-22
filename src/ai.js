@@ -87,26 +87,43 @@ const AI = {
     if (AI.wantStone(p)) { ratio[3] += .08; ratio[0] -= .04; ratio[1] -= .04; }
     const total = vils.length || 1;
     const cur = Object.assign({}, p.gathN);
+    // the resource furthest below its share first; when it has no free spot (no room for a farm, no wood for one,
+    // no free mine), the next one, so villagers do not all end up on wood while gold is short
+    const byNeed = () => RES.map((r, i) => [r, ratio[i] * total - (cur[r] || 0), ratio[i]]).filter(x => x[2] > 0).sort((a, b) => b[1] - a[1]);
     for (const u of p.idle) {
-      let best = 'food', bd = -1e9;
-      RES.forEach((r, i) => { const d = ratio[i] * total - (cur[r] || 0); if (d > bd) { bd = d; best = r; } });
-      if (AI.assign(p, S, u, best)) cur[best] = (cur[best] || 0) + 1;
-      else if (AI.assign(p, S, u, 'wood')) cur.wood++;
+      for (const [r] of byNeed()) if (AI.assign(p, S, u, r)) { cur[r] = (cur[r] || 0) + 1; break; }
     }
     // rebalance
     S.rebalanceT -= S.L.think;
     if (S.rebalanceT <= 0) {
       S.rebalanceT = 20;
       const want = RES.map((r, i) => ratio[i] * total);
-      let surplus = -1, deficit = -1, sv = 0, dv = 0;
-      RES.forEach((r, i) => { const d = (cur[r] || 0) - want[i]; if (d > sv) { sv = d; surplus = i; } if (-d > dv) { dv = -d; deficit = i; } });
-      if (surplus >= 0 && deficit >= 0 && sv >= 2 && dv >= 2) {
+      let surplus = -1, sv = 0;
+      RES.forEach((r, i) => { const d = (cur[r] || 0) - want[i]; if (d > sv) { sv = d; surplus = i; } });
+      const short = RES.map((r, i) => [r, want[i] - (cur[r] || 0)]).filter(([, d]) => d >= 2).sort((a, b) => b[1] - a[1]);
+      if (surplus >= 0 && sv >= 2 && short.length) {
         const mv = vils.filter(u => { if (u.ord.t !== 'gather') return false; const r = byId(u.ord.id); if (!r || r.k === 'b') return false; const rk = resKindOf(r); return rk && rk.res === RES[surplus]; }).slice(0, Math.min(3, Math.floor(sv)));
-        for (const u of mv) AI.assign(p, S, u, RES[deficit]);
+        for (const u of mv) for (const [r] of short) if (AI.assign(p, S, u, r)) { cur[r] = (cur[r] || 0) + 1; break; }
       }
     }
   },
-  saving(p) { return false; },
+  // resources units and monks must leave in the bank:
+  // - wood for new farms while fewer villagers work food than its share (units used to spend every log, so farms,
+  //   and with them the age-ups, waited);
+  // - the next age once the villager count and the age requirements are met. In the Castle Age, saving for the
+  //   Imperial Age (1000 food, 800 gold) pauses for 30 s after every 150 s, so a slow economy or a siege of the
+  //   base cannot stop every unit that costs gold for good.
+  reserve(p, S) {
+    const res = {};
+    const farmsShort = Math.floor(AI_RATIO[p.age][0] * p.vil - (p.gathN.food || 0));
+    if ((p.cnt.mill || 0) > 0 && farmsShort >= 2) res.wood = 60 * Math.min(3, farmsShort);
+    const ageId = ['feudal', 'castle', 'imperial'][p.age];
+    const saving = ageId && p.vil >= AI_AGEVIL[p.age] - 2 && !p.aging && ageReqMet(p);
+    if (!saving) { S.saveT = null; return res; }
+    if (S.saveT == null) S.saveT = G.time;
+    if (p.age < 2 || (G.time - S.saveT) % 180 < 150) for (const [r, n] of Object.entries(techCost(p, ageId))) res[r] = (res[r] || 0) + n;
+    return res;
+  },
   wantStone(p) { return p.age >= 1 && (p.cntAll.castle || 0) < (p.age >= 3 ? 2 : 1) && p.res.stone < 650; },
   assign(p, S, u, res) {
     const base = S.base;
@@ -352,8 +369,6 @@ const AI = {
   military(p, S, army, blds, nv) {
     const L = S.L;
     if (!L.prod) return;
-    const ageId = ['feudal', 'castle', 'imperial'][p.age];
-    const saving = ageId && nv >= AI_AGEVIL[p.age] - 2 && !p.aging && ageReqMet(p);
     // what has the enemy been fielding?
     if (G.time - S.seenT > 6) {
       S.seenT = G.time;
@@ -366,7 +381,7 @@ const AI = {
       for (const k in seen) S.seen[k] = S.seen[k] * .7 + seen[k];
     }
     const prodB = blds.filter(b => b.built && (b.type === 'barracks' || b.type === 'archery' || b.type === 'stable' || b.type === 'castle' || b.type === 'siege'));
-    const reserve = saving ? techCost(p, ageId) : { food: 0, gold: 0 };
+    const reserve = AI.reserve(p, S);
     const vilReserve = nv < L.vil ? 60 : 0;
     const pref = AI_PREF[p.civ] || ['militia', 'archer', 'spear'];
     const sieges = army.filter(u => U[u.type].cls.includes('siege')).length;
@@ -397,7 +412,9 @@ const AI = {
       }
       if (!pick || ps < -50) continue;
       const c = ST(p.id, resolveTrain(p, pick)).cost;
-      const ok = RES.every(r => !c[r] || (p.res[r] || 0) - c[r] >= ((reserve[r] || 0) + (r === 'food' ? vilReserve : 0)));
+      // the castle keeps a core of unique units even while the economy saves for the next age
+      const keep = b.type === 'castle' && pick === 'uu' && (p.cnt[CIVS[p.civ].uu] || 0) < 8 ? {} : reserve;
+      const ok = RES.every(r => !c[r] || (p.res[r] || 0) - c[r] >= ((keep[r] || 0) + (r === 'food' ? vilReserve : 0)));
       if (ok) Cmd.train(b, pick);
     }
   },
@@ -417,11 +434,14 @@ const AI = {
       S.threatT = G.time;
       const defenders = (army || []).filter(u => !S.atkIds.includes(u.id) || dist(u.x, u.y, threat.x, threat.y) < 25);
       for (const u of defenders) if (u.ord.t === 'idle' || (u.ord.t === 'move' && !S.attacking)) Cmd.move([u], threat.x, threat.y, { amove: true });
-      // ring the bell when our army is clearly outmatched
-      if (S.L.bell && !p.bell && nThreat >= 4 && defenders.length < nThreat * .6) { Cmd.bell(p); S.bellT = G.time; }
+      // ring the bell when our army is clearly outmatched, but not again within 2 minutes of the last release
+      if (S.L.bell && !p.bell && nThreat >= 4 && defenders.length < nThreat * .6 && G.time - (S.bellOffT || -999) > 120) { Cmd.bell(p); S.bellT = G.time; }
       // villagers fight back if desperate (feudal rush defence)
       if (!S.L.bell && nThreat >= 3 && vils) for (const u of vils.slice(0, 6)) if (u.ord.t === 'gather' && dist(u.x, u.y, threat.x, threat.y) < 6) Cmd.attack([u], threat, false);
-    } else if (p.bell && G.time - S.threatT > 12) Cmd.bell(p);
+    }
+    // villagers go back to work 12 s after the last threat, and after 60 s at the latest: a few enemies camping in
+    // the base used to keep the whole economy hidden for many minutes
+    if (p.bell && (G.time - S.threatT > 12 || G.time - S.bellT > 60)) { Cmd.bell(p); S.bellOffT = G.time; }
   },
   attack(p, S, army) {
     const L = S.L;
@@ -507,7 +527,7 @@ const AI = {
     const mon = blds.find(b => b.type === 'monastery' && b.built);
     if (!mon) return;
     const monks = mine.filter(u => u.type === 'monk');
-    if (monks.length < (p.ai === 'normal' ? 2 : 3) && mon.q.length === 0 && p.res.gold > 250) Cmd.train(mon, 'monk');
+    if (monks.length < (p.ai === 'normal' ? 2 : 3) && mon.q.length === 0 && p.res.gold > 250 + (AI.reserve(p, S).gold || 0)) Cmd.train(mon, 'monk');
     const v = G.vis[p.id];
     for (const m of monks) {
       if (m.ord.t !== 'idle') continue;

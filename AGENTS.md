@@ -84,7 +84,8 @@ compact functions.
 
 ## Where common changes go
 
-- Balance: numbers in `data.js`; AI behaviour constants at the top of `ai.js`. Verify with the sim test
+- Balance: numbers in `data.js`; AI behaviour constants at the top of `ai.js` (what the AI keeps in the bank is in
+  `AI.reserve()`, the town bell in `AI.defend()`). Verify with the sim test
   (age-up times and kills are printed at the end), and compare `node tools/balance-report.mjs` before and after the
   change (win rates, age-up times and unit effectiveness over all pairings). Put both reports in the PR description;
   do not commit them.
@@ -115,7 +116,8 @@ compact functions.
 
 Each has an issue, ordered in the Roadmap (#17):
 
-- Bug found by measurement: computer players stall in the Castle Age and hardly train unique units (#23).
+- Found by measurement: since computer players use their unique units (#23), the Byzantines win far fewer
+  AI-vs-AI games than the other civilizations (#28).
 - Computer players: monks that convert and heal (#25).
 - Gameplay: replays (#10), trade carts and cogs (#11), transport ships and amphibious attacks (#12), Sriwijaya and
   Khmer (#13).

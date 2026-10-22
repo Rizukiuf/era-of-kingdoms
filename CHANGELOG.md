@@ -35,6 +35,18 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
   to 195 px, with 40 px command buttons. On every screen 500 px tall or less, the top bar drops the gatherer counts
   and the clock, so it fits next to an iPhone notch. When it still does not fit, it takes a second row instead of
   letting items overlap. Large grows only as far as the HUD fits, notch included. Phones held upright look as before.
+- **Computer players no longer stall in the Castle Age, and they use their unique unit** (issue #23).
+  - **Villagers:** when a villager cannot go where it is most needed (no room or wood for a farm), it goes to the
+    next resource that is short instead of always to wood, so gold no longer runs dry.
+  - **Wood for farms:** units leave enough wood in the bank for new farms while food is short.
+  - **Monks** no longer spend the gold saved for an age-up.
+  - **Saving for the Imperial Age** pauses for 30 s after every 150 s, and the castle keeps up to 8 unique units
+    even while saving.
+  - **Town bell:** villagers come out at most 60 s after it rings, so a few enemies camping in the base no longer
+    stop the whole economy for minutes.
+
+  Over 112 hard-vs-hard matches of 40 minutes, the computer players trained 2,595 unique units instead of 299
+  (every civilization 191–445 instead of 3–131), and reached the Imperial Age in 53 of 224 games instead of 43.
 - The main menu scrolls when the screen is shorter than the menu (phones in landscape, small laptop windows);
   its top and bottom were cut off before.
 - Tooltips stay on screen when they fit neither above nor below their button, and on short screens the message
