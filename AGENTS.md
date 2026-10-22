@@ -94,7 +94,8 @@ compact functions.
   the drawing in the cache key. Player colors come from `PCOLORS[p.color]`, whose values the color-blind mode
   swaps in place (`applyDisplay()` in `ui.js`, which then clears `Art.cache`); never cache a color value elsewhere.
   Use `hpColor()` for health and the CSS variables `--good` / `--bad` for good and bad signals.
-- HUD or menu change: `ui.js` plus CSS in `shell.html`. Check the 760 px mobile breakpoint and the Large interface
+- HUD or menu change: `ui.js` plus CSS in `shell.html`. Check the phone layouts (760 px wide or less, upright; and
+  500 px tall or less, phones in landscape, where the top bar may take a second row) and the Large interface
   size. The interface size zooms the HUD and menus with CSS `zoom` (`--ui`): measure positions with
   `getBoundingClientRect()`, not `clientWidth` / `offsetWidth`, and divide `vw` / `vh` lengths inside them by `--ui`.
 
@@ -114,8 +115,7 @@ compact functions.
 
 Each has an issue, ordered in the Roadmap (#17):
 
-- Bugs found by measurement: computer players stall in the Castle Age and hardly train unique units (#23); phones
-  760 px wide or less in landscape leave almost no room for the map (#24).
+- Bug found by measurement: computer players stall in the Castle Age and hardly train unique units (#23).
 - Computer players: monks that convert and heal (#25).
 - Gameplay: replays (#10), trade carts and cogs (#11), transport ships and amphibious attacks (#12), Sriwijaya and
   Khmer (#13).
