@@ -404,7 +404,9 @@ body.cvd .resb.flash { animation-name: flashCvd; }
 // ============================================================
 //  ERA OF KINGDOMS — game data
 // ============================================================
-const GAME_VERSION = '1.0.0';
+// shown in the main menu and written into exported saves; between releases main carries the next version with -dev,
+// and the release PR drops the suffix (AGENTS.md, Project status)
+const GAME_VERSION = '1.1.0-dev';
 const RES = ['food', 'wood', 'gold', 'stone'];
 const AGE_IDS = ['dark', 'feudal', 'castle', 'imperial'];
 const TW = 64, TH = 32;           // isometric tile size in screen px at zoom 1

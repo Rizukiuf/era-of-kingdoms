@@ -12,7 +12,10 @@ and write the few small files that make the game an installable app with offline
 
 - Version 1.0.0, released on 2026-10-21 (tag `v1.0.0` and a GitHub release). Playable at
   https://rizukiuf.github.io/era-of-kingdoms/ (GitHub Pages serves `index.html` and the app files on `main`).
-- `main` already has changes made after 1.0.0 (CHANGELOG `[Unreleased]`), and GitHub Pages serves them.
+- `main` already has changes made after 1.0.0 (CHANGELOG `[Unreleased]`), and GitHub Pages serves them. Its main
+  menu shows `1.1.0-dev` (`GAME_VERSION` in `data.js`, also written into exported saves). A release is one PR that
+  drops `-dev`, turns `[Unreleased]` into the new version with its date and updates this status; the maintainer
+  then tags it. After a release, `main` moves on to the next version with `-dev`.
 - What has been done and fixed so far: `CHANGELOG.md`. Add an entry there for every user-visible change.
 - What comes next: the Roadmap issue (#17) lists planned work and open bugs in priority order, each with its
   own issue. See also "Known gaps" at the end of this file and README section 10.

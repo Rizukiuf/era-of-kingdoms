@@ -10,7 +10,8 @@ There is no server, database or third-party library. Graphics are drawn in code 
 effects and music are synthesized with the Web Audio API. The whole game builds into a single `index.html`
 file (about 540 KB) that also works offline. On the website it can be installed as an app.
 
-Version 1.0.0 (first playable release).
+Version 1.0.0 is the latest release. The website runs the newest code on `main`, which shows **1.1.0-dev** in the
+main menu until 1.1.0 is released.
 
 ---
 
