@@ -118,7 +118,6 @@ Each has an issue, ordered in the Roadmap (#17):
 
 - Found by measurement: since computer players use their unique units (#23), the Byzantines win far fewer
   AI-vs-AI games than the other civilizations (#28).
-- Computer players: monks that convert and heal (#25).
 - Gameplay: replays (#10), trade carts and cogs (#11), transport ships and amphibious attacks (#12), Sriwijaya and
   Khmer (#13).
 - Larger work: scenario system (#14), Gajah Mada campaign (#15), online multiplayer (#16; lockstep, peer-to-peer;
