@@ -387,9 +387,8 @@ any limits, just like a well-written issue; you can also point the agent at an i
 
 Planned work and open bugs are listed in priority order in the
 [Roadmap issue](https://github.com/Rizukiuf/era-of-kingdoms/issues/17); each item has its own issue. Numbers such as
-#25 below are issue numbers on https://github.com/Rizukiuf/era-of-kingdoms/issues.
+#16 below are issue numbers on https://github.com/Rizukiuf/era-of-kingdoms/issues.
 
-- Computer players use monks only to collect relics (#25).
 - Against computer players the Byzantines are currently the weakest civilization (#28).
 - No online multiplayer yet (#16): planned as lockstep between 2–4 players, peer to peer. The simulation is already
   command-driven and fixed-step, which suits that model.

@@ -6,6 +6,10 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 ## [Unreleased]
 
 ### Added
+- **Computer players use monks in battle** (#30, issue #25). From the Castle Age, Normal keeps 2 monks and Hard and
+  Hardest keep 4. One collects relics while any are left; the others follow the army, convert valuable enemy units
+  in range (unique units, siege, cavalry first, and never a unit another monk is already converting) and heal
+  wounded soldiers. Easy still has no monks. Before, computer monks only carried relics and never converted a unit.
 - **Color-blind mode and interface size** (#20, issue #8). Two new rows in **Settings**, applied at once in the menu
   and during a game, and remembered. **Color-blind mode** switches the 8 player colors to the Okabe–Ito palette,
   which stays distinguishable with protanopia, deuteranopia and tritanopia (in a simulation, the closest two player
@@ -29,13 +33,13 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
   damaged is refused with a message and leaves every slot as it was. Works offline and from `file://`.
 
 ### Fixed
-- **Phones in landscape** (#24): on phones 760 px wide or less held sideways, the battlefield had only 13–68 px of
+- **Phones in landscape** (#27, issue #24): on phones 760 px wide or less held sideways, the battlefield had only 13–68 px of
   height left between the top bar and the bottom panel. The bottom panel now stays one row high, as on wider
   screens, so the map keeps about half the screen. For example, 740 × 360 goes from 53 to 180 px and 667 × 375 from 68
   to 195 px, with 40 px command buttons. On every screen 500 px tall or less, the top bar drops the gatherer counts
   and the clock, so it fits next to an iPhone notch. When it still does not fit, it takes a second row instead of
   letting items overlap. Large grows only as far as the HUD fits, notch included. Phones held upright look as before.
-- **Computer players no longer stall in the Castle Age, and they use their unique unit** (issue #23).
+- **Computer players no longer stall in the Castle Age, and they use their unique unit** (#29, issue #23).
   - **Villagers:** when a villager cannot go where it is most needed (no room or wood for a farm), it goes to the
     next resource that is short instead of always to wood, so gold no longer runs dry.
   - **Wood for farms:** units leave enough wood in the bank for new farms while food is short.
@@ -69,11 +73,11 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
   slot → load, message when a load fails); 19 checks in total.
 - Browser smoke test: 2 new checks for the display settings (Large interface size with minimap clicks and tooltips
   that still line up, color-blind mode that redraws the sprites, and switching both back); 21 checks in total.
-- Browser smoke test: the farm check no longer fails in about one run out of ten. The test pauses the game at a
+- Browser smoke test: the farm check no longer fails in about one run out of ten (#22). The test pauses the game at a
   moment that depends on timing, and now and then a villager walking across the new field stood on the point it
   clicked; it now clicks a point of the farm that nothing covers.
-- Browser smoke test: a check on a phone in landscape (740 × 360, touch) and upright (390 × 844); 22 checks in total.
-- Documentation: README section 10 and AGENTS.md list the known gaps with their issues and point to the Roadmap
+- Browser smoke test: a check on a phone in landscape (740 × 360, touch) and upright (390 × 844); 22 checks in total (#27).
+- Documentation (#26): README section 10 and AGENTS.md list the known gaps with their issues and point to the Roadmap
   (#17). The feature issue template names all built files, the changelog and the balance report; bug reports ask
   for the game version, how the game was opened and the display settings.
 

@@ -3409,7 +3409,7 @@ const AI = {
     if (now >= S.nextTech) { S.nextTech = now + 3; AI.research(p, S, blds, vils.length); }
     if (now >= S.nextMil) { S.nextMil = now + L.think; AI.military(p, S, army, blds, vils.length); AI.defend(p, S, false, army, vils); AI.attack(p, S, army); }
     if (now >= S.scoutT) { S.scoutT = now + 12; AI.scout(p, S, mine); }
-    if (now >= S.relicT) { S.relicT = now + 6; AI.monks(p, S, mine, blds); }
+    if (now >= S.relicT) { S.relicT = now + 2; AI.monks(p, S, mine, blds); }
     if (now >= S.fishT) { S.fishT = now + 5; AI.fish(p, S, mine, blds); }
     if (now >= S.marketT) { S.marketT = now + 15; AI.trade(p); }
   },
@@ -3870,19 +3870,48 @@ const AI = {
     const pt = pts[S.scoutI++ % pts.length];
     Cmd.move([sc], clamp(pt[0], 1, G.N - 1), clamp(pt[1], 1, G.N - 1), {});
   },
+  // Monks: one collects relics while any are left on the map; the others go with the army, convert valuable enemy
+  // units in range (cavalry, unique units, siege) and heal the wounded. Normal keeps 2 monks, Hard and Hardest 4.
   monks(p, S, mine, blds) {
     if (p.ai === 'easy' || p.age < 2) return;
     const mon = blds.find(b => b.type === 'monastery' && b.built);
-    if (!mon) return;
-    const monks = mine.filter(u => u.type === 'monk');
-    if (monks.length < (p.ai === 'normal' ? 2 : 3) && mon.q.length === 0 && p.res.gold > 250 + (AI.reserve(p, S).gold || 0)) Cmd.train(mon, 'monk');
+    const monks = mine.filter(u => u.type === 'monk' && !u.gIn);
+    if (mon && monks.length < (p.ai === 'normal' ? 2 : 4) && mon.q.length === 0 && p.res.gold > 250 + (AI.reserve(p, S).gold || 0)) Cmd.train(mon, 'monk');
+    if (!monks.length) return;
     const v = G.vis[p.id];
+    const relics = G.ress.filter(r => r.type === 'relic' && !r.dead && !r.carrier && !r.inB && v[tIdx(r.x, r.y)] > 0);
+    let keeper = byId(S.relicMonk);
+    if (!keeper || keeper.dead || keeper.owner !== p.id) keeper = null;
+    if (!keeper && (relics.length || monks.some(m => m.relic))) { keeper = monks.find(m => m.relic) || monks[0]; S.relicMonk = keeper.id; }
+    if (keeper && !relics.length && !keeper.relic && keeper.ord.t !== 'relicIn') { keeper = null; S.relicMonk = 0; }
+    if (keeper && keeper.ord.t === 'idle') {
+      if (keeper.relic) { if (mon) Cmd.smart([keeper], mon.x, mon.y, mon); }
+      else {
+        let best = null, bd = 1e9;
+        for (const r of relics) { const d = dist(r.x, r.y, keeper.x, keeper.y); if (d < bd) { bd = d; best = r; } }
+        if (best && bd < 45) issue(keeper, { t: 'relic', id: best.id }, false);
+      }
+    }
+    // where the army is: the attack group while attacking, else the soldiers at home, else the rally point
+    const group = S.attacking ? S.atkIds.map(byId).filter(u => u && !u.dead) : mine.filter(u => !u.gIn && U[u.type].pop && !U[u.type].animal && u.type !== 'villager' && u.type !== 'monk' && !isShip(u));
+    const cx = group.length ? group.reduce((a, u) => a + u.x, 0) / group.length : S.rally.x;
+    const cy = group.length ? group.reduce((a, u) => a + u.y, 0) / group.length : S.rally.y;
+    const taken = new Set(monks.filter(m => m.ord.t === 'convert').map(m => m.ord.id));
     for (const m of monks) {
-      if (m.ord.t !== 'idle') continue;
-      if (m.relic) { Cmd.smart([m], mon.x, mon.y, mon); continue; }
-      let best = null, bd = 1e9;
-      for (const r of G.ress) if (r.type === 'relic' && !r.dead && !r.carrier && !r.inB && v[tIdx(r.x, r.y)] > 0) { const d = dist(r.x, r.y, m.x, m.y); if (d < bd) { bd = d; best = r; } }
-      if (best && bd < 45) issue(m, { t: 'relic', id: best.id }, false);
+      if (m === keeper || m.ord.t === 'convert' || m.ord.t === 'heal') continue;
+      if (m.rest <= 0) {
+        let tgt = null, tv = 99;
+        unitsNear(m.x, m.y, 10, u => {
+          if (!isEnemy(p.id, u.owner) || u.gIn || U[u.type].noConvert || taken.has(u.id) || v[tIdx(u.x, u.y)] !== 2) return;
+          const c = U[u.type].cls, val = unitValue(u.type) + (c.includes('unique') || c.includes('siege') ? 100 : c.includes('cavalry') ? 50 : 0);
+          if (val > tv || (val === tv && tgt && dist(u.x, u.y, m.x, m.y) < dist(tgt.x, tgt.y, m.x, m.y))) { tv = val; tgt = u; }
+        });
+        if (tgt) { issue(m, { t: 'convert', id: tgt.id }, false); taken.add(tgt.id); continue; }
+      }
+      let hurt = null, hv = 0;
+      unitsNear(m.x, m.y, 8, u => { if (u.owner === p.id && u !== m && !u.gIn && !U[u.type].cls.includes('siege') && !isShip(u) && u.hp < u.mhp * .7 && u.mhp - u.hp > hv) { hv = u.mhp - u.hp; hurt = u; } });
+      if (hurt) { issue(m, { t: 'heal', id: hurt.id }, false); continue; }
+      if (dist(m.x, m.y, cx, cy) > 6 && (m.ord.t === 'idle' || (m.ord.t === 'move' && dist(m.ord.x, m.ord.y, cx, cy) > 6))) Cmd.move([m], cx + (rnd() - .5) * 2, cy + (rnd() - .5) * 2, {});
     }
   },
   fish(p, S, mine, blds) {
