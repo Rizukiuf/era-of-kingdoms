@@ -60,6 +60,8 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 - The "Game saved." confirmation stays visible after saving into a slot (the window redrew over it).
 
 ### Project and tooling
+- The main menu shows **v1.1.0-dev** instead of v1.0.0, so the website, which runs `main`, can be told apart from
+  the 1.0.0 release. Exported save files carry the same version.
 - New developer tool `tools/balance-report.mjs` (issue #9): plays every 1v1 pairing of the civilizations between
   computer players in parallel worker threads and prints a Markdown report with win rates (95% intervals and a
   head-to-head table), median age-up times, the most effective units (kill value per resource spent) and how the

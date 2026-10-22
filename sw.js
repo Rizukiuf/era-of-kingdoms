@@ -4,7 +4,7 @@
 // ============================================================
 // The build writes this file to sw.js and puts a hash of every built file into the cache name, so each deploy
 // has a new cache. main.js registers it only when the page is served over http(s); file:// never uses it.
-const CACHE = 'eok-07bb7ae7e29f';
+const CACHE = 'eok-decbde2ecbb7';
 const FILES = ['index.html', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 // A new version downloads in the background ('reload' skips the HTTP cache) and then waits until every page of
