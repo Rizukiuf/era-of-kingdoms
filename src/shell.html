@@ -290,25 +290,29 @@ body.cvd .resb.flash { animation-name: flashCvd; }
   #bottom .in { height: 152px; }
   .touchbar { bottom: calc(164px + env(safe-area-inset-bottom, 0px)); }
 }
+/* phones in landscape (500 px tall or less, any width): the screen is small and a notch takes up to about 90 px of
+   the width, so the top bar drops the gatherer counts and the clock, as on phones held upright. If it still does
+   not fit (long age names, five-digit stocks), it takes a second row and the panels below follow its height (--tbh,
+   set by UI.init()) instead of overlapping. */
+@media (max-height: 500px) {
+  #topbar .in { gap: 8px; height: auto; min-height: 40px; flex-wrap: wrap; }
+  .resb { padding: 2px 4px; }
+  .tbtn { padding: 0 6px; }
+  .resb .g, .clock { display: none; }
+  #feed, #objectives { top: calc(var(--tbh, 41px) + 11px); }
+  #wonderbar { top: calc(var(--tbh, 41px) + 7px); }
+}
+/* narrow screens (phones): smaller text, compact top bar, one-column menus and windows */
 @media (max-width: 760px) {
   body { font-size: 14px; }
   #topbar .in { gap: 4px 6px; height: auto; flex-wrap: wrap; padding-block: 4px; }
-  .resb { flex: 1 1 17%; justify-content: center; gap: 4px; padding: 2px 0; }
+  .resb { justify-content: center; gap: 4px; padding: 2px 0; }
   .resb .g, .clock, .agebar { display: none; }
   .resb .v { font-size: 14px; min-width: 0; }
   .resb svg { width: 16px; height: 16px; }
   .agebox { font-size: 13px; }
-  #feed, #objectives { top: calc(84px + env(safe-area-inset-top, 0px)); }
-  #wonderbar { top: calc(80px + env(safe-area-inset-top, 0px)); }
   #feed { max-width: calc(100vw / var(--ui) - 32px); }
   .msg { font-size: 13px; }
-  #bottom .in { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; height: auto; gap: 6px; }
-  #mmwrap { width: 140px; height: 70px; grid-row: 1; }
-  #selpanel { grid-column: 2; grid-row: 1; border-right: 0; height: 84px; overflow-y: auto; }
-  #mmwrap { align-self: start; }
-  #cmdgrid { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, 40px); width: 100%; }
-  .cb { width: 100%; height: 40px; }
-  .cb img { object-fit: contain; }
   .portrait { width: 60px; height: 60px; }
   .sinfo .nm { font-size: 15px; }
   .stats { font-size: 12px; }
@@ -321,11 +325,38 @@ body.cvd .resb.flash { animation-name: flashCvd; }
   .slot .acts { justify-content: flex-start; }
   .menu-col { padding-left: max(20px, env(safe-area-inset-left, 0px)); }
   .menu-item { font-size: 19px; }
-  #objectives { width: min(300px, calc(100vw / var(--ui) - 24px)); font-size: 13px; max-height: calc(100vh / var(--ui) - 360px); overflow-y: auto; }
+  #objectives { width: min(300px, calc(100vw / var(--ui) - 24px)); font-size: 13px; overflow-y: auto; }
   #objectives.collapsed { max-width: calc(100vw / var(--ui) - 24px); }
   #objectives .tut-cur { font-size: 13px; }
+}
+/* phones held upright: the top bar takes two rows, and the command card spans the width under the minimap */
+@media (max-width: 760px) and (min-height: 501px) {
+  .resb { flex: 1 1 17%; }
+  #feed, #objectives { top: calc(84px + env(safe-area-inset-top, 0px)); }
+  #wonderbar { top: calc(80px + env(safe-area-inset-top, 0px)); }
+  #bottom .in { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; height: auto; gap: 6px; }
+  #mmwrap { width: 140px; height: 70px; grid-row: 1; }
+  #selpanel { grid-column: 2; grid-row: 1; border-right: 0; height: 84px; overflow-y: auto; }
+  #mmwrap { align-self: start; }
+  #cmdgrid { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, 40px); width: 100%; }
+  .cb { width: 100%; height: 40px; }
+  .cb img { object-fit: contain; }
+  #objectives { max-height: calc(100vh / var(--ui) - 360px); }
   body.has-tut #feed { top: calc(140px + env(safe-area-inset-top, 0px)); }
   .touchbar { bottom: calc(250px + env(safe-area-inset-bottom, 0px)); }
+}
+/* phones in landscape: the battlefield needs the little height there is, so the HUD stays one row high at the
+   bottom, as in the 1100 px layout, only smaller */
+@media (max-width: 760px) and (max-height: 500px) {
+  #topbar .in { column-gap: 4px; min-height: 0; }
+  #bottom .in { height: 140px; gap: 8px; padding-block: 6px; }
+  #mmwrap { width: 160px; height: 80px; }
+  #selpanel { gap: 8px; padding: 2px 4px; }
+  #cmdgrid { grid-template-columns: repeat(5, 40px); grid-template-rows: repeat(3, 40px); }
+  .cb { width: 40px; height: 40px; }
+  #objectives { max-height: calc(100vh / var(--ui) - 210px); }
+  body.has-tut #feed { max-width: calc(50vw / var(--ui) - 24px); }
+  .touchbar { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

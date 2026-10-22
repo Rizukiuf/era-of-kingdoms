@@ -106,7 +106,8 @@ browsers allow them only over HTTPS or on the computer itself.
 - **Save and load:** 3 save slots plus an autosave; any slot can be exported to a `.json` file and imported again,
   also on another device.
 - **7 languages:** English, Bahasa Indonesia, Español, Français, Deutsch, Português, 日本語.
-- **Touch controls** and a phone layout, alongside mouse and keyboard with hotkeys.
+- **Touch controls** and phone layouts for holding the phone upright or sideways, alongside mouse and keyboard
+  with hotkeys.
 - **Accessibility settings:** a color-blind mode (player colors from the Okabe–Ito palette, which stays
   distinguishable with red-green and blue-yellow color blindness, blue → yellow → magenta health bars, and a check
   or cross on good and bad messages) and an interface size (Small / Normal / Large) for the HUD, tooltips, menus
@@ -334,7 +335,7 @@ node tools/balance-report.mjs --out report.md         # all 8 civilizations: 28 
 selecting and ordering villagers, hotkeys, a 15-minute fast-forward, save and load, exporting and importing save
 files (including broken ones), clicking a unit standing behind a building, the color-blind mode and the interface
 size (minimap clicks and tooltips with a zoomed HUD), the speed and pause buttons, quitting to the menu and
-continuing, and the tutorial panel.
+continuing, the tutorial panel, and the phone layouts in landscape and upright.
 It fails on any failed check or page error. One-time setup, then run:
 
 ```bash
@@ -390,7 +391,6 @@ Planned work and open bugs are listed in priority order in the
 
 - Computer players stay in the Castle Age for a long time and hardly train their unique unit (#23), and they use
   monks only to collect relics (#25).
-- On phones 760 px wide or less held in landscape, the map gets very little room (#24).
 - No online multiplayer yet (#16): planned as lockstep between 2–4 players, peer to peer. The simulation is already
   command-driven and fixed-step, which suits that model.
 - No story campaign yet (#15, Gajah Mada and the Palapa Oath), which needs the scenario system (#14) first.

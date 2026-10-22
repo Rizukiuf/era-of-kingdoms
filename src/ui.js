@@ -18,13 +18,21 @@ function applyDisplay() {
     Art.cache.clear(); // unit sprites, corpses and icons are cached per color index
     UI.lastSig = ''; UI.selSig = '';
   }
-  // above the phone layout (761–923 px, e.g. phones in landscape) Large grows only as far as the top bar still fits
+  // Large grows only as far as the HUD still fits: above the phone layout the top bar stays in one row (its compact
+  // form needs about 746 px with the usual 12 px side padding, 722 px on short screens; a notch widens the padding),
+  // and on screens 500 px tall or less (phones in landscape) the battlefield keeps about half the height
   let z = UI_SCALES[Settings.uiScale] || 1;
-  if (z > 1 && innerWidth > 760) z = Math.max(1, Math.min(z, innerWidth / 770));
+  const short = innerHeight <= 500;
+  if (z > 1) {
+    const cs = getComputedStyle($('topin')), pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    if (innerWidth > 760) z = Math.min(z, innerWidth / ((short ? 722 : 746) + pad));
+    if (short) z = Math.min(z, innerHeight / 340);
+    z = Math.max(1, z);
+  }
   const cl = document.body.classList;
   cl.toggle('cvd', cb);
   cl.toggle('ui-zoom', z !== 1);
-  cl.toggle('ui-tight', z > 1 && innerWidth > 760 && innerWidth / z < 900);
+  cl.toggle('ui-tight', z > 1 && innerWidth > 760 && !short && innerWidth / z < 900);
   if (z !== 1) document.body.style.setProperty('--ui', z); else document.body.style.removeProperty('--ui');
 }
 const hpColor = f => Settings.cb ? (f > .6 ? '#56b4e9' : f > .3 ? '#f0e442' : '#ee5ca0') : (f > .6 ? '#5bd15b' : f > .3 ? '#e6c229' : '#e04a3a');
@@ -128,6 +136,8 @@ const UI = {
     this.bindInput(cv);
     this.bindMinimap($('minimap'));
     window.addEventListener('resize', () => { R.resize(); applyDisplay(); });
+    // on short screens the top bar may take a second row; the panels under it follow its height (--tbh in shell.html)
+    if (window.ResizeObserver) new ResizeObserver(() => { const h = $('topbar').offsetHeight; if (h) document.body.style.setProperty('--tbh', h + 'px'); }).observe($('topbar'));
     $('tooltip').style.display = 'none';
     const sp = $('selpanel'), release = () => setTimeout(() => { this.panelHold = false; }, 0);
     sp.addEventListener('pointerdown', () => { this.panelHold = true; });

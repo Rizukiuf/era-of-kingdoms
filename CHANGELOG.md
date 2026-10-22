@@ -29,6 +29,12 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
   damaged is refused with a message and leaves every slot as it was. Works offline and from `file://`.
 
 ### Fixed
+- **Phones in landscape** (#24): on phones 760 px wide or less held sideways, the battlefield had only 13–68 px of
+  height left between the top bar and the bottom panel. The bottom panel now stays one row high, as on wider
+  screens, so the map keeps about half the screen. For example, 740 × 360 goes from 53 to 180 px and 667 × 375 from 68
+  to 195 px, with 40 px command buttons. On every screen 500 px tall or less, the top bar drops the gatherer counts
+  and the clock, so it fits next to an iPhone notch. When it still does not fit, it takes a second row instead of
+  letting items overlap. Large grows only as far as the HUD fits, notch included. Phones held upright look as before.
 - The main menu scrolls when the screen is shorter than the menu (phones in landscape, small laptop windows);
   its top and bottom were cut off before.
 - Tooltips stay on screen when they fit neither above nor below their button, and on short screens the message
@@ -54,6 +60,7 @@ https://github.com/Rizukiuf/era-of-kingdoms/pulls.
 - Browser smoke test: the farm check no longer fails in about one run out of ten. The test pauses the game at a
   moment that depends on timing, and now and then a villager walking across the new field stood on the point it
   clicked; it now clicks a point of the farm that nothing covers.
+- Browser smoke test: a check on a phone in landscape (740 × 360, touch) and upright (390 × 844); 22 checks in total.
 - Documentation: README section 10 and AGENTS.md list the known gaps with their issues and point to the Roadmap
   (#17). The feature issue template names all built files, the changelog and the balance report; bug reports ask
   for the game version, how the game was opened and the display settings.

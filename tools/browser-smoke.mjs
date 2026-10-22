@@ -382,6 +382,43 @@ try {
     && document.getElementById('loadNote')?.textContent === t('pm.loadFail'), null, { timeout: 10000 }).then(() => true, () => false);
   errors.splice(errorsBefore); // the failed restore is logged on purpose
   check('a save that fails to load shows a message', failNote, failNote ? '' : `screen ${await page.evaluate(() => UI.screen)}, note "${await note()}"`);
+
+  // 12) phones: held in landscape (740 × 360, touch) the battlefield keeps about half the height, command buttons stay
+  //     40 px and minimap clicks land where they should; turned upright (390 × 844) the HUD stacks as before
+  let phone = null;
+  try {
+    const pctx = await browser.newContext({ viewport: { width: 740, height: 360 }, hasTouch: true, isMobile: true });
+    const pp = await pctx.newPage();
+    pp.on('pageerror', e => errors.push('phone: ' + e.message));
+    await pp.goto(pathToFileURL(join(ROOT, 'index.html')).href);
+    await pp.waitForFunction(() => typeof UI !== 'undefined' && UI.screen === 'menu', null, { timeout: 30000 });
+    await pp.evaluate(seed => startSkirmish({ size: 'small', map: 'continental', seed, startRes: 'std', startAge: 0, reveal: 'normal', popCap: 200, victory: 'standard',
+      players: [{ civ: 'majapahit', color: 0, team: 0, human: true }, { civ: 'franks', color: 1, team: 0, ai: 'hard' }] }), SEED);
+    await pp.waitForFunction(() => UI.screen === 'game' && G && !G.cfg.attract, null, { timeout: 30000 });
+    await pp.evaluate(() => { UI.paused = true; UI.select([G.blds.find(b => b.owner === G.human && b.type === 'tc').id], false); UI.updateHUD(); });
+    const layout = () => pp.evaluate(() => {
+      const r = id => document.getElementById(id).getBoundingClientRect(), t = r('topbar'), b = r('bottom'), m = r('mmwrap');
+      const c = document.querySelector('#cmdgrid .cb:not(.empty)').getBoundingClientRect();
+      return { map: Math.round(b.top - t.bottom), h: innerHeight, btn: Math.round(c.height), stacked: c.top >= m.bottom };
+    });
+    const land = await layout();
+    const mini = await pp.evaluate(() => {
+      const r = document.getElementById('minimap').getBoundingClientRect(), N = G.N, wx = N * .45, wy = N * .55;
+      return { x: r.left + r.width / 2 + (wx - wy) * r.width / (2 * N), y: r.top + (wx + wy) * r.height / (2 * N), wx, wy };
+    });
+    await pp.mouse.click(mini.x, mini.y);
+    const miniOff = await pp.evaluate(m => Math.hypot(R.cam.x / TW + R.cam.y / TH - m.wx, R.cam.y / TH - R.cam.x / TW - m.wy), mini);
+    await pp.setViewportSize({ width: 390, height: 844 });
+    await pp.waitForTimeout(300);
+    const port = await layout();
+    await pctx.close();
+    phone = { land, port, miniOff };
+  } catch (e) { phone = (e && e.message || String(e)).split('\n')[0]; }
+  check('phones: landscape keeps about half the height for the map, upright keeps the stacked layout',
+    typeof phone === 'object' && phone.land.map >= phone.land.h * .45 && phone.land.btn >= 40 && !phone.land.stacked && phone.miniOff < 1.5
+      && phone.port.stacked && phone.port.map >= phone.port.h * .5,
+    typeof phone === 'object' ? `740×360: map ${phone.land.map}px of ${phone.land.h}, buttons ${phone.land.btn}px, minimap click ${phone.miniOff.toFixed(1)} tiles off; ` +
+      `390×844: ${phone.port.stacked ? 'stacked' : 'NOT stacked'}, map ${phone.port.map}px of ${phone.port.h}` : phone);
 } catch (e) {
   check('test ran to the end', false, (e && e.message || String(e)).split('\n')[0]);
 }
